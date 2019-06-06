@@ -7,6 +7,7 @@
 #define W_OFFSET glm::vec3(0, 0, -grid.h * 0.5)
 #define EPS 0.001
 
+// initialize "dam break" scenario
 void Simulation::add_particle_box() {
   for (int x = grid.nx / 2; x < grid.nx - 1; x++) {
     for (int y = 1; y < grid.ny - 1; y++) {
@@ -172,5 +173,7 @@ void Simulation::advance(float dt) {
   for (int i = 0; i < 5; i++)
     advect(0.2 * dt);
   particles_to_grid();
-  grid.add_gravity();
+  grid.add_gravity(dt);
 }
+
+void Simulation::step_frame() {}

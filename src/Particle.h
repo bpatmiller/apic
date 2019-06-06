@@ -5,7 +5,9 @@
 class Particle {
 public:
   glm::vec3 position;
+  float pad0_;
   glm::vec3 velocity;
+  float pad1_;
 
   Particle(glm::vec3 p) {
     position = p;
