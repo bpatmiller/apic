@@ -6,3 +6,8 @@ void Grid::add_gravity(float dt) {
     v.data[i] += g;
   }
 }
+
+void Grid::compute_phi() {}
+void Grid::extend_velocity() {}
+void Grid::enforce_boundary() {}
+void Grid::project() {}

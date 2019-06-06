@@ -1,4 +1,3 @@
-#include "SimulationDomain.h"
 #include <Partio.h>
 #include <iostream>
 
