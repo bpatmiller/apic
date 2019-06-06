@@ -1,6 +1,7 @@
 #include "simulation.h"
 #include <glm/gtc/random.hpp>
 #include <glm/gtx/common.hpp>
+#include <iostream>
 
 #define U_OFFSET glm::vec3(-grid.h * 0.5, 0, 0)
 #define V_OFFSET glm::vec3(0, -grid.h * 0.5, 0)
@@ -9,8 +10,8 @@
 
 // initialize "dam break" scenario
 void Simulation::add_particle_box() {
-  for (int x = grid.nx / 2; x < grid.nx - 1; x++) {
-    for (int y = 1; y < grid.ny - 1; y++) {
+  for (int x = 1; x < grid.nx - 1; x++) {
+    for (int y = grid.ny / 3; y < grid.ny - 1; y++) {
       for (int z = 1; z < grid.nz - 1; z++) {
         // for each cell, add 8 new jittered particles
         float base_x = x * grid.h;
@@ -174,6 +175,23 @@ void Simulation::advance(float dt) {
     advect(0.2 * dt);
   particles_to_grid();
   grid.add_gravity(dt);
+  grid.compute_phi();
+  grid.extend_velocity();
+  grid.enforce_boundary();
+  grid.project();
+  grid.extend_velocity();
+  grid_to_particles();
 }
 
-void Simulation::step_frame() {}
+void Simulation::step_frame(float time) {
+  float t = 0;
+  float dt;
+  while (t < time) {
+    dt = 2.0 * grid.CFL();
+    if (t + dt >= time) {
+      dt = time - t;
+    }
+    advance(dt);
+    t += dt;
+  }
+}

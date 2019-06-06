@@ -5,8 +5,8 @@ const glm::vec3 SIDE(1, 0, 0);
 const glm::vec3 UP(0, 1, 0);
 
 void GUI::create_sphere(float Radius, std::vector<glm::vec3> &s_vertices) {
-  int Stacks = 8;
-  int Slices = 8;
+  int Stacks = 4;
+  int Slices = 4;
   s_vertices.clear();
 
   for (int i = 0; i <= Stacks; ++i) {
@@ -48,12 +48,12 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   // some gl settings
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glEnable(GL_DEPTH_TEST);
-//   glEnable(GL_CULL_FACE);
+  //   glEnable(GL_CULL_FACE);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDepthFunc(GL_LESS);
-//   glCullFace(GL_BACK);
-//   glLineWidth(2.0f);
+  //   glCullFace(GL_BACK);
+  //   glLineWidth(2.0f);
 }
 
 void GUI::update() {
@@ -69,7 +69,8 @@ void GUI::update() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // step the simulation, copy the new particle data
-  simulation.step_frame();
+  float frame_time = 0.05;
+  simulation.step_frame(frame_time);
   fluid.ib.update(simulation.particles, 0);
 
   // use/render the fluid

@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   // key / mouse callbacks
   glfwSetKeyCallback(window, KeyCallback);
 
-  gui.init(2.0f, 50, 50, 50);
+  gui.init(2.0f, 25, 25, 25);
   while (!glfwWindowShouldClose(window)) {
     gui.update();
     glfwSwapBuffers(window);

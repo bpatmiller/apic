@@ -57,6 +57,7 @@ public:
     s.init(nx, ny, nz);
   }
 
+  float CFL();
   void add_gravity(float dt);
   void compute_phi();
   void extend_velocity();

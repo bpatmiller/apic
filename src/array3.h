@@ -35,6 +35,15 @@ template <class T> struct Array3 {
     clear();
   }
 
+  T infnorm() const {
+    T n = 0;
+    for (int i = 0; i < size; i++) {
+      if (std::fabs(data[i]) > n)
+        n = std::fabs(data[i]);
+    }
+    return n;
+  }
+
   void clear() { std::memset(data, 0, size * sizeof(T)); }
 
   T &operator()(int i, int j, int k) { return data[i + sx * j + sx * sy * k]; }

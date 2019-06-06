@@ -16,12 +16,13 @@ public:
     grid.init(lx_, nx_, ny_, nz_);
   }
 
+  float CFL();
   void add_particle_box();
   void particles_to_grid();
   void grid_to_particles();
   void advect(float dt);
   void advance(float dt);
-  void step_frame();
+  void step_frame(float time);
 
   // helper functions
   glm::ivec3 position_to_grid_index(glm::vec3 p, glm::vec3 offset);
