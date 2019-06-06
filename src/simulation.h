@@ -16,7 +16,6 @@ public:
     grid.init(lx_, nx_, ny_, nz_);
   }
 
-  float CFL();
   void add_particle_box();
   void particles_to_grid();
   void grid_to_particles();
@@ -30,4 +29,5 @@ public:
   glm::vec3 position_to_lower_grid_coords(glm::vec3 p, glm::vec3 offset);
   void grid_add_quantities(Array3f &arr, float q, glm::ivec3 index,
                            glm::vec3 coords);
+  glm::vec3 trilerp_uv(glm::vec3 p);
 };

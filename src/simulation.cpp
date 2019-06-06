@@ -1,7 +1,9 @@
 #include "simulation.h"
 #include <glm/gtc/random.hpp>
 #include <glm/gtx/common.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <iostream>
+
 
 #define U_OFFSET glm::vec3(-grid.h * 0.5, 0, 0)
 #define V_OFFSET glm::vec3(0, -grid.h * 0.5, 0)
@@ -28,6 +30,28 @@ void Simulation::add_particle_box() {
     }
   }
 }
+
+// given a position, return the trilinear interpolation
+// of the velocity field at that position
+glm::vec3 Simulation::trilerp_uv(glm::vec3 p) {
+    glm::vec3 index;
+    glm::vec3 coords;
+    glm::vec3 result;
+    // u
+    index  = position_to_lower_grid_index(p, U_OFFSET);
+    coords  = position_to_lower_grid_coords(p, U_OFFSET);
+    result.x = grid.u.trilerp(index, coords);
+    // v
+    index  = position_to_lower_grid_index(p, V_OFFSET);
+    coords  = position_to_lower_grid_coords(p, V_OFFSET);
+    result.y = grid.v.trilerp(index, coords);
+    // w
+    index  = position_to_lower_grid_index(p, W_OFFSET);
+    coords  = position_to_lower_grid_coords(p, W_OFFSET);
+    result.z = grid.w.trilerp(index, coords);
+
+    return result;
+  }
 
 // returns the closest grid index (with an offset)
 // defaults to sampling center of grids (position
@@ -168,19 +192,44 @@ void Simulation::grid_to_particles() {
   }
 }
 
-void Simulation::advect(float dt) {}
+void Simulation::advect(float dt) {
+    glm::vec3 mid, gu;
+    // boundaries
+    float xmin = 1.001 * grid.h;
+    float ymin = 1.001 * grid.h;
+    float zmin = 1.001 * grid.h;
+    float xmax = grid.lx - 1.001*grid.h;
+    float ymax = grid.ly - 1.001*grid.h;
+    float zmax = grid.lz - 1.001*grid.h;
+    for (uint i = 0; i < particles.size(); i++) {
+        Particle& p = particles[i];
+        // first stage of RK2
+        gu = trilerp_uv(p.position);
+        // std::cout << "GU: " << glm::to_string(gu) << std::endl;
+        mid = p.position + 0.5f * dt * gu;
+        mid.x = glm::clamp(mid.x, xmin, xmax);
+        mid.y = glm::clamp(mid.y, ymin, ymax);
+        mid.z = glm::clamp(mid.z, zmin, zmax);
+        // second stage
+        gu = trilerp_uv(mid);
+        p.position += dt * gu;
+        p.position.x = glm::clamp(mid.x, xmin, xmax);
+        p.position.y = glm::clamp(mid.y, ymin, ymax);
+        p.position.z = glm::clamp(mid.z, zmin, zmax);
+    }
+}
 
 void Simulation::advance(float dt) {
   for (int i = 0; i < 5; i++)
-    advect(0.2 * dt);
-  particles_to_grid();
-  grid.add_gravity(dt);
-  grid.compute_phi();
-  grid.extend_velocity();
-  grid.enforce_boundary();
-  grid.project();
-  grid.extend_velocity();
-  grid_to_particles();
+    advect(0.2 * dt);   // todo
+  particles_to_grid();  //done
+  grid.add_gravity(dt); //done
+//   grid.compute_phi();   //todo
+//   grid.extend_velocity();   //todo
+//   grid.enforce_boundary();  //todo
+//   grid.project();   //todo (big one)
+//   grid.extend_velocity();   //todo
+//   grid_to_particles();  //todo
 }
 
 void Simulation::step_frame(float time) {
