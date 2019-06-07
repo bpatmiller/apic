@@ -22,9 +22,9 @@ public:
 
   // camera variables
   glm::quat orientation = glm::quat(glm::mat4(1));
-  glm::vec3 eye = glm::vec3(0, 0, 4);
-  glm::vec3 base_eye = glm::vec3(0, 0, 4);
-  glm::vec3 focus = glm::vec3(0, 0, 0);
+  glm::vec3 eye = glm::vec3(.5, .5, 4);
+  glm::vec3 base_eye = glm::vec3(.5, .5, 4);
+  glm::vec3 focus = glm::vec3(.5, .5, 0);
   glm::mat4 view_matrix;
   glm::mat4 projection_matrix;
 

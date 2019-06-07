@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  GLFWwindow *window = glfwCreateWindow(640, 480, "sph", NULL, NULL);
+  GLFWwindow *window = glfwCreateWindow(640, 480, "apic", NULL, NULL);
   if (!window) {
     throw std::runtime_error("glfwCreateWindow error");
   }

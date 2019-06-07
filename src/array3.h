@@ -46,14 +46,22 @@ template <class T> struct Array3 {
 
   // index (i,j,k cell index), coords (0-1f uv coords)
   T trilerp(glm::ivec3 index, glm::vec3 coords) {
-    return (1-coords.x)*(1-coords.y)*(1-coords.z) * (*this)(index.x,index.y,index.z) +
-            (1-coords.x)*(1-coords.y)*(coords.y) * (*this)(index.x,index.y,index.z+1) +
-            (1-coords.x)*(coords.y)*(1-coords.z) * (*this)(index.x,index.y+1,index.z) +
-            (1-coords.x)*(coords.y)*(coords.y) * (*this)(index.x,index.y+1,index.z+1) +
-            (coords.x)*(1-coords.y)*(1-coords.z) * (*this)(index.x+1,index.y,index.z) +
-            (coords.x)*(1-coords.y)*(coords.y) * (*this)(index.x+1,index.y,index.z+1) +
-            (coords.x)*(coords.y)*(1-coords.z) * (*this)(index.x+1,index.y+1,index.z) +
-            (coords.x)*(coords.y)*(coords.y) * (*this)(index.x+1,index.y+1,index.z+1);
+    return (1 - coords.x) * (1 - coords.y) * (1 - coords.z) *
+               (*this)(index.x, index.y, index.z) +
+           (1 - coords.x) * (1 - coords.y) * (coords.y) *
+               (*this)(index.x, index.y, index.z + 1) +
+           (1 - coords.x) * (coords.y) * (1 - coords.z) *
+               (*this)(index.x, index.y + 1, index.z) +
+           (1 - coords.x) * (coords.y) * (coords.y) *
+               (*this)(index.x, index.y + 1, index.z + 1) +
+           (coords.x) * (1 - coords.y) * (1 - coords.z) *
+               (*this)(index.x + 1, index.y, index.z) +
+           (coords.x) * (1 - coords.y) * (coords.y) *
+               (*this)(index.x + 1, index.y, index.z + 1) +
+           (coords.x) * (coords.y) * (1 - coords.z) *
+               (*this)(index.x + 1, index.y + 1, index.z) +
+           (coords.x) * (coords.y) * (coords.y) *
+               (*this)(index.x + 1, index.y + 1, index.z + 1);
   }
 
   void clear() { std::memset(data, 0, size * sizeof(T)); }

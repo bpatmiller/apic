@@ -59,6 +59,8 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
 void GUI::update() {
   // update camera vars
   glfwGetWindowSize(window, &window_dims.x, &window_dims.y);
+  glViewport(0, 0, window_dims.x, window_dims.y);
+
   eye =
       focus + glm::vec3(glm::mat4_cast(orientation) * glm::vec4(base_eye, 1.0));
   view_matrix = glm::lookAt(eye, focus, UP);
