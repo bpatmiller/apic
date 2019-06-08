@@ -12,7 +12,7 @@ public:
 
   Array3f u, v, w;    // velocities
   Array3f du, dv, dw; // saved velocities (flip)
-  Array3i count;      // keep track of how many particles
+  Array3f count;      // keep track of how many particles
                       // are near each grid node
   Array3i marker;     // liquid, air, solid
   Array3f phi;        // used for velocity extrapolation

@@ -6,28 +6,18 @@
 #define AIR_CELL 1
 #define SOLID_CELL 2
 
-// ensure no particle moves more than
-// inspiration from Stanford APIC assignment
+// ensure no particle moves more than grid.h
 float Grid::CFL() {
-  // float max = std::max(
-  //     gravity * h,
-  //     glm::pow(u.infnorm(),2.0f) + glm::pow(w.infnorm(),2.0f) +
-  //     glm::pow(v.infnorm(), 2.0f));
-  // max = std::max(max, 1e-16f);
-  // std::cout << "max: " << max << std::endl;
-  // // in case of 0 velocity field
-  // return 2.0 * std::max(std::min(h / std::sqrt(max), 0.1f), 1e-3f);
-  return 0.005f;
+  float maxsq = glm::pow(u.infnorm(), 2.0f) + glm::pow(w.infnorm(), 2.0f) +
+                glm::pow(v.infnorm(), 2.0f);
+  maxsq = std::max(maxsq, 1e-16f);
+  return std::max(1e-3f,h / std::sqrt(maxsq));
 }
 
 void Grid::add_gravity(float dt) {
-  // FIXME remove later, using for testing
-  u.clear();
-  w.clear();
-
   float g = dt * gravity;
   for (int i = 0; i < v.size; i++) {
-    v.data[i] = -1.0f;
+    v.data[i] += g;
   }
 }
 

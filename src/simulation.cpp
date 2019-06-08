@@ -66,7 +66,7 @@ void Simulation::position_to_grid(glm::vec3 p, glm::vec3 offset,
 
   // check for out of bounds
   if (i < 0 || j < 0 || k < 0)
-    std::cerr << "ERROR: invalid index" << std::endl;
+    std::cerr << "ERROR: invalid index || position: " << glm::to_string(p) << std::endl;
 
   float bx = nx - std::floor(nx);
   float by = ny - std::floor(ny);
@@ -149,11 +149,13 @@ void Simulation::particles_to_grid() {
     grid_add_quantities(grid.v, p.velocity.y, index, coords);
   }
   // average velocities
-  for (int i = 0; i < grid.u.sx; i++) {
-    for (int j = 0; j < grid.u.sy; j++) {
-      for (int k = 0; k < grid.u.sz; k++) {
-        if (grid.count(i, j, k) != 0)
+  for (int i = 0; i < grid.v.sx; i++) {
+    for (int j = 0; j < grid.v.sy; j++) {
+      for (int k = 0; k < grid.v.sz; k++) {
+        if (grid.count(i, j, k) != 0) {
           grid.v(i, j, k) /= grid.count(i, j, k);
+          std::cout << "v(" << i << "," << j << "," << k << "): " << grid.v(i,j,k) << std::endl;
+        }
       }
     }
   }
@@ -168,9 +170,9 @@ void Simulation::particles_to_grid() {
     grid_add_quantities(grid.w, p.velocity.z, index, coords);
   }
   // average velocities
-  for (int i = 0; i < grid.u.sx; i++) {
-    for (int j = 0; j < grid.u.sy; j++) {
-      for (int k = 0; k < grid.u.sz; k++) {
+  for (int i = 0; i < grid.w.sx; i++) {
+    for (int j = 0; j < grid.w.sy; j++) {
+      for (int k = 0; k < grid.w.sz; k++) {
         if (grid.count(i, j, k) != 0)
           grid.w(i, j, k) /= grid.count(i, j, k);
       }
@@ -197,13 +199,13 @@ void Simulation::advect(float dt) {
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
     // first stage of RK2
-    gu = glm::vec3(0, -1, 0); // trilerp_uvw(p.position);
+    gu = trilerp_uvw(p.position);
     mid = p.position + 0.5f * dt * gu;
     mid.x = glm::clamp(mid.x, xmin, xmax);
     mid.y = glm::clamp(mid.y, ymin, ymax);
     mid.z = glm::clamp(mid.z, zmin, zmax);
     // second stage
-    gu = glm::vec3(0, -1, 0); // trilerp_uvw(mid);
+    gu = trilerp_uvw(mid);
     p.position += dt * gu;
     p.position.x = glm::clamp(mid.x, xmin, xmax);
     p.position.y = glm::clamp(mid.y, ymin, ymax);
@@ -212,6 +214,7 @@ void Simulation::advect(float dt) {
 }
 
 void Simulation::advance(float dt) {
+  std::cout << "advance(" << dt << ")" << std::endl;
   particles_to_grid();  // done
   grid.add_gravity(dt); // done
   // grid.compute_phi();   //todo
