@@ -8,6 +8,9 @@ layout(location = 4) in float pad1_;
 uniform mat4 projection;
 uniform mat4 view;
 
+out vec3 v;
+
 void main() {
+  v = velocity;
   gl_Position = projection * view * vec4(position + vertex_position, 1.0);
 }

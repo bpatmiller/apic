@@ -4,7 +4,7 @@ set(PROJECT_NAME apic)
 project(${PROJECT_NAME})
 
 # cmake options
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # cpp version / settings

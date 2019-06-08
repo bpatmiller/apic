@@ -1,4 +1,6 @@
 #version 430 core
 out vec4 fragment_color;
 
-void main() { fragment_color = vec4(0.2, 0.6, 0.8, 1.0); }
+in vec3 v;
+
+void main() { fragment_color = vec4(vec3(0.5) + v / 10.0, 1.0); }

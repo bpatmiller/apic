@@ -24,10 +24,9 @@ public:
   void step_frame(float time);
 
   // helper functions
-  glm::ivec3 position_to_grid_index(glm::vec3 p, glm::vec3 offset);
-  glm::ivec3 position_to_lower_grid_index(glm::vec3 p, glm::vec3 offset);
-  glm::vec3 position_to_lower_grid_coords(glm::vec3 p, glm::vec3 offset);
+  void position_to_grid(glm::vec3 p, glm::vec3 offset, glm::ivec3 &index,
+                        glm::vec3 &coords);
   void grid_add_quantities(Array3f &arr, float q, glm::ivec3 index,
                            glm::vec3 coords);
-  glm::vec3 trilerp_uv(glm::vec3 p);
+  glm::vec3 trilerp_uvw(glm::vec3 p);
 };

@@ -41,14 +41,10 @@ public:
     v.init(nx, ny + 1, nz);
     w.init(nx, ny, nz + 1);
     count.init(nx + 1, ny + 1, nz + 1);
-    // saved velocities (flip)
-    du.init(nx + 1, ny, nz);
-    dv.init(nx, ny + 1, nz);
-    dw.init(nx, ny, nz + 1);
-    //
+    pressure.init(nx, ny, nz);
+
     marker.init(nx, ny, nz);
     phi.init(nx, ny, nz);
-    pressure.init(nx, ny, nz);
     poission.init(nx, ny, nz);
     precon.init(nx, ny, nz);
     m.init(nx, ny, nz);
@@ -60,6 +56,7 @@ public:
   float CFL();
   void add_gravity(float dt);
   void compute_phi();
+  void sweep_phi();
   void extend_velocity();
   void enforce_boundary();
   void project();

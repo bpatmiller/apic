@@ -4,9 +4,9 @@
 #include <glm/gtx/string_cast.hpp>
 #include <iostream>
 
-#define U_OFFSET glm::vec3(-grid.h * 0.5, 0, 0)
-#define V_OFFSET glm::vec3(0, -grid.h * 0.5, 0)
-#define W_OFFSET glm::vec3(0, 0, -grid.h * 0.5)
+#define U_OFFSET glm::vec3(0.5f, 0, 0)
+#define V_OFFSET glm::vec3(0, 0.5f, 0)
+#define W_OFFSET glm::vec3(0, 0, 0.5f)
 #define EPS 0.001
 
 // initialize "dam break" scenario
@@ -32,58 +32,48 @@ void Simulation::add_particle_box() {
 
 // given a position, return the trilinear interpolation
 // of the velocity field at that position
-glm::vec3 Simulation::trilerp_uv(glm::vec3 p) {
-  glm::vec3 index;
+glm::vec3 Simulation::trilerp_uvw(glm::vec3 p) {
+  glm::ivec3 index;
   glm::vec3 coords;
   glm::vec3 result;
   // u
-  index = position_to_lower_grid_index(p, U_OFFSET);
-  coords = position_to_lower_grid_coords(p, U_OFFSET);
+  position_to_grid(p, U_OFFSET, index, coords);
   result.x = grid.u.trilerp(index, coords);
   // v
-  index = position_to_lower_grid_index(p, V_OFFSET);
-  coords = position_to_lower_grid_coords(p, V_OFFSET);
+  position_to_grid(p, V_OFFSET, index, coords);
   result.y = grid.v.trilerp(index, coords);
   // w
-  index = position_to_lower_grid_index(p, W_OFFSET);
-  coords = position_to_lower_grid_coords(p, W_OFFSET);
+  position_to_grid(p, W_OFFSET, index, coords);
   result.z = grid.w.trilerp(index, coords);
 
   return result;
 }
 
-// returns the closest grid index (with an offset)
-// defaults to sampling center of grids (position
-// given by vec3(h/2) + (h*x, h*y, h*z)
-// e.g. snapping to the nearest u point given by:
-// position_to_grid_index(p, vec3(-h/2, 0, 0))
-// in which position is given by
-// (0, h/2, h/2) + (h*x, h*y, h*z)
-glm::ivec3 Simulation::position_to_grid_index(glm::vec3 p, glm::vec3 offset) {
-  int i = glm::round((p.x - grid.h * 0.5 - offset.x) / grid.h);
-  int j = glm::round((p.y - grid.h * 0.5 - offset.y) / grid.h);
-  int k = glm::round((p.z - grid.h * 0.5 - offset.z) / grid.h);
-  return glm::ivec3(i, j, k);
-}
-
 // does the same as above, but rounds down for easier grid transfer
-glm::ivec3 Simulation::position_to_lower_grid_index(glm::vec3 p,
-                                                    glm::vec3 offset) {
-  int i = static_cast<int>((p.x - grid.h * 0.5 - offset.x) / grid.h);
-  int j = static_cast<int>((p.y - grid.h * 0.5 - offset.y) / grid.h);
-  int k = static_cast<int>((p.z - grid.h * 0.5 - offset.z) / grid.h);
-  return glm::ivec3(i, j, k);
-}
+// use offset = glm::vec3(0) for values sampled at center
+void Simulation::position_to_grid(glm::vec3 p, glm::vec3 offset,
+                                  glm::ivec3 &index, glm::vec3 &coords) {
+  float nx = (p.x / grid.h) - 0.5f + offset.x;
+  float ny = (p.y / grid.h) - 0.5f + offset.y;
+  float nz = (p.z / grid.h) - 0.5f + offset.z;
 
-glm::vec3 Simulation::position_to_lower_grid_coords(glm::vec3 p,
-                                                    glm::vec3 offset) {
-  float x =
-      glm::fmod(static_cast<float>(p.x - grid.h * 0.5 - offset.x), grid.h);
-  float y =
-      glm::fmod(static_cast<float>(p.x - grid.h * 0.5 - offset.x), grid.h);
-  float z =
-      glm::fmod(static_cast<float>(p.x - grid.h * 0.5 - offset.x), grid.h);
-  return glm::vec3(x, y, z);
+  int i = static_cast<int>(nx);
+  int j = static_cast<int>(ny);
+  int k = static_cast<int>(nz);
+
+  // set index
+  index = glm::ivec3(i, j, k);
+
+  // check for out of bounds
+  if (i < 0 || j < 0 || k < 0)
+    std::cerr << "ERROR: invalid index" << std::endl;
+
+  float bx = nx - std::floor(nx);
+  float by = ny - std::floor(ny);
+  float bz = nz - std::floor(nz);
+
+  // set barycentric coordinates
+  coords = glm::vec3(bx, by, bz);
 }
 
 // arr = Array3f to be added to
@@ -134,8 +124,9 @@ void Simulation::particles_to_grid() {
   grid.u.clear();
   grid.count.clear();
   for (auto p : particles) {
-    glm::ivec3 index = position_to_lower_grid_index(p.position, U_OFFSET);
-    glm::vec3 coords = position_to_lower_grid_coords(p.position, U_OFFSET);
+    glm::ivec3 index;
+    glm::vec3 coords;
+    position_to_grid(p.position, U_OFFSET, index, coords);
     grid_add_quantities(grid.u, p.velocity.x, index, coords);
   }
   // average velocities
@@ -152,8 +143,9 @@ void Simulation::particles_to_grid() {
   grid.v.clear();
   grid.count.clear();
   for (auto p : particles) {
-    glm::ivec3 index = position_to_lower_grid_index(p.position, V_OFFSET);
-    glm::vec3 coords = position_to_lower_grid_coords(p.position, V_OFFSET);
+    glm::ivec3 index;
+    glm::vec3 coords;
+    position_to_grid(p.position, V_OFFSET, index, coords);
     grid_add_quantities(grid.v, p.velocity.y, index, coords);
   }
   // average velocities
@@ -170,8 +162,9 @@ void Simulation::particles_to_grid() {
   grid.w.clear();
   grid.count.clear();
   for (auto p : particles) {
-    glm::ivec3 index = position_to_lower_grid_index(p.position, W_OFFSET);
-    glm::vec3 coords = position_to_lower_grid_coords(p.position, W_OFFSET);
+    glm::ivec3 index;
+    glm::vec3 coords;
+    position_to_grid(p.position, W_OFFSET, index, coords);
     grid_add_quantities(grid.w, p.velocity.z, index, coords);
   }
   // average velocities
@@ -188,6 +181,7 @@ void Simulation::particles_to_grid() {
 void Simulation::grid_to_particles() {
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
+    p.velocity = trilerp_uvw(p.position);
   }
 }
 
@@ -203,13 +197,13 @@ void Simulation::advect(float dt) {
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
     // first stage of RK2
-    gu = trilerp_uv(p.position);
+    gu = glm::vec3(0, -1, 0); // trilerp_uvw(p.position);
     mid = p.position + 0.5f * dt * gu;
     mid.x = glm::clamp(mid.x, xmin, xmax);
     mid.y = glm::clamp(mid.y, ymin, ymax);
     mid.z = glm::clamp(mid.z, zmin, zmax);
     // second stage
-    gu = trilerp_uv(mid);
+    gu = glm::vec3(0, -1, 0); // trilerp_uvw(mid);
     p.position += dt * gu;
     p.position.x = glm::clamp(mid.x, xmin, xmax);
     p.position.y = glm::clamp(mid.y, ymin, ymax);
@@ -218,23 +212,23 @@ void Simulation::advect(float dt) {
 }
 
 void Simulation::advance(float dt) {
-  for (int i = 0; i < 5; i++)
-    advect(0.2 * dt);   // todo
   particles_to_grid();  // done
   grid.add_gravity(dt); // done
-  //   grid.compute_phi();   //todo
+  // grid.compute_phi();   //todo
   //   grid.extend_velocity();   //todo
   //   grid.enforce_boundary();  //todo
   //   grid.project();   //todo (big one)
   //   grid.extend_velocity();   //todo
-  //   grid_to_particles();  //todo
+  grid_to_particles(); // done
+  for (int i = 0; i < 5; i++)
+    advect(0.2 * dt); // done
 }
 
 void Simulation::step_frame(float time) {
   float t = 0;
   float dt;
   while (t < time) {
-    dt = 2.0 * grid.CFL();
+    dt = grid.CFL();
     if (t + dt >= time) {
       dt = time - t;
     }
