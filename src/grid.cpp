@@ -86,20 +86,179 @@ void Grid::sweep_velocity() {
   sweep_velocity_boundary(w);
 }
 void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {
-  //  int di=(i0<i1) ? 1 : -1;
-  //  int dj=(j0<j1) ? 1 : -1;
-  //  int dk=(k0<k1) ? 1 : -1;
+  int di = (i0 < i1) ? 1 : -1;
+  int dj = (j0 < j1) ? 1 : -1;
+  int dk = (k0 < k1) ? 1 : -1;
+
+  float w;
+
+  for (int i = i0; i != i1; i += di) {
+    for (int j = j0; j != j1; j += dj) {
+      for (int k = k0; k != k1; k += dk) {
+        if (marker(i - 1, j, k) == AIR_CELL && marker(i, j, k) == AIR_CELL) {
+          float dp = di * (phi(i, j, k) - phi(i - 1, j, k));
+          if (dp < 0)
+            continue;
+          // avg y-dir phi change
+          float dq = 0.5 * (phi(i - 1, j, k) + phi(i, j, k) -
+                            phi(i - 1, j - dj, k) - phi(i, j - dj, k));
+          if (dq < 0)
+            continue;
+          // avg z-dir phi chhttps://www.youtube.com/watch?v=HcO-NPtj5BIange
+          float dr = 0.5 * (phi(i, j - 1, k) + phi(i, j, k) -
+                            phi(i, j - 1, k - dk) - phi(i, j, k - dk));
+          if (dr < 0)
+            continue;
+
+          // weighted sum of other velocities
+          if (dp + dq + dr == 0) {
+            w = 1.0f / 3.0f;
+            v(i, j, k) =
+                w * (v(i - di, j, k) + v(i, j - dj, k) + +v(i, j, k - dk));
+          } else {
+            w = 1.0f / (dp + dq + dr);
+            v(i, j, k) = dp * w * v(i - di, j, k) + dq * w * v(i, j - dj, k) +
+                         dr * w * v(i, j, k - dk);
+          }
+        }
+      }
+    }
+  }
 }
-void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {}
-void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {}
+void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {
+  int di = (i0 < i1) ? 1 : -1;
+  int dj = (j0 < j1) ? 1 : -1;
+  int dk = (k0 < k1) ? 1 : -1;
+
+  float w;
+
+  for (int i = i0; i != i1; i += di) {
+    for (int j = j0; j != j1; j += dj) {
+      for (int k = k0; k != k1; k += dk) {
+        if (marker(i, j - 1, k) == AIR_CELL && marker(i, j, k) == AIR_CELL) {
+          float dq = dj * (phi(i, j, k) - phi(i, j - 1, k));
+          if (dq < 0)
+            continue;
+          // avg x-dir phi change
+          float dp = 0.5 * (phi(i, j - 1, k) + phi(i, j, k) -
+                            phi(i - di, j - 1, k) - phi(i - di, j, k));
+          if (dp < 0)
+            continue;
+          // avg z-dir phi change
+          float dr = 0.5 * (phi(i, j - 1, k) + phi(i, j, k) -
+                            phi(i, j - 1, k - dk) - phi(i, j, k - dk));
+          if (dr < 0)
+            continue;
+
+          // weighted sum of other velocities
+          if (dp + dq + dr == 0) {
+            w = 1.0f / 3.0f;
+            v(i, j, k) =
+                w * (v(i - di, j, k) + v(i, j - dj, k) + +v(i, j, k - dk));
+          } else {
+            w = 1.0f / (dp + dq + dr);
+            v(i, j, k) = dp * w * v(i - di, j, k) + dq * w * v(i, j - dj, k) +
+                         dr * w * v(i, j, k - dk);
+          }
+        }
+      }
+    }
+  }
+}
+
+void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {
+  int di = (i0 < i1) ? 1 : -1;
+  int dj = (j0 < j1) ? 1 : -1;
+  int dk = (k0 < k1) ? 1 : -1;
+
+  float w;
+
+  for (int i = i0; i != i1; i += di) {
+    for (int j = j0; j != j1; j += dj) {
+      for (int k = k0; k != k1; k += dk) {
+        if (marker(i, j, k - 1) == AIR_CELL && marker(i, j, k) == AIR_CELL) {
+          float dr = dk * (phi(i, j, k) - phi(i, j, k - 1));
+          if (dr < 0)
+            continue;
+          // avg y-dir phi change
+          float dq = 0.5 * (phi(i - 1, j, k) + phi(i, j, k) -
+                            phi(i - 1, j - dj, k) - phi(i, j - dj, k));
+          if (dq < 0)
+            continue;
+          // avg x-dir phi change
+          float dp = 0.5 * (phi(i, j - 1, k) + phi(i, j, k) -
+                            phi(i - di, j - 1, k) - phi(i - di, j, k));
+          if (dp < 0)
+            continue;
+
+          // weighted sum of other velocities
+          if (dp + dq + dr == 0) {
+            w = 1.0f / 3.0f;
+            v(i, j, k) =
+                w * (v(i - di, j, k) + v(i, j - dj, k) + +v(i, j, k - dk));
+          } else {
+            w = 1.0f / (dp + dq + dr);
+            v(i, j, k) = dp * w * v(i - di, j, k) + dq * w * v(i, j - dj, k) +
+                         dr * w * v(i, j, k - dk);
+          }
+        }
+      }
+    }
+  }
+}
 
 void Grid::enforce_boundary() {
-  // TODO
   // just zero out velocity components normal to the 6 cube faces
+  // top and bottom
+  for (int i = 0; i < v.sx; i++) {
+    for (int k = 0; k < v.sz; k++) {
+      v(i, 1, k) = 0;
+      v(i, v.sy - 1, k) = 0;
+    }
+  }
+  // left and right
+  for (int j = 0; j < u.sy; j++) {
+    for (int k = 0; k < u.sz; k++) {
+      u(1, j, k) = 0;
+      u(u.sx - 1, j, k) = 0;
+    }
+  }
+  // front and back
+  for (int i = 0; i < w.sx; i++) {
+    for (int j = 0; j < w.sy; j++) {
+      w(i, j, 1) = 0;
+      w(i, j, w.sz - 1) = 0;
+    }
+  }
 }
 void Grid::project() {
-  // TODO yeet lol
+  compute_divergence();
+  compute_A();
+  compute_b();
+  solve_pressure();
+  add_pressure_gradient();
 }
+
+// populate A matrix to solve Ax=b
+  void Grid::compute_A() {
+
+  }
+
+// populate b vector to solve Ax=b
+  void Grid::compute_b() {
+
+  }
+
+  // solve for x in Ax=b
+  void Grid::solve_pressure() {
+
+  }
+
+  // add the new pressure gradient to the velocity field
+  void Grid::add_pressure_gradient() {
+
+  }
+
 
 void Grid::compute_phi() {
   // init
@@ -121,6 +280,7 @@ void Grid::compute_phi() {
   }
 }
 
+// TODO abstract each direction into a function, as in sweeping velocity
 void Grid::sweep_phi() {
   // sweep in 8 directions
 
@@ -217,8 +377,8 @@ void Grid::sweep_phi() {
 void Grid::solve_phi(float p, float q, float r, float &c) {
   float md = std::fmin(std::fmin(p, q), r) + 1;
   // FIXME improve sweeping algorithm
-  // if (d > std::fmax(p,q)) {
-  //   d =
+  // if (md > std::fmax(p,q)) {
+  //   md = (p+q+sqrt(2-sqr(p-q)))/2;
   // }
   if (md < c)
     c = md;

@@ -277,10 +277,10 @@ void Simulation::advance(float dt) {
   grid.add_gravity(dt);   // done
   mark_cells();           // done
   grid.compute_phi();     // done
-  grid.extend_velocity(); // todo
-  //   grid.enforce_boundary();  //todo
-  //   grid.project();   //todo (big one)
-  grid.extend_velocity(); // todo
+  grid.extend_velocity(); // done (? TODO improve this)
+  grid.enforce_boundary();// done
+  grid.project();         // todo
+  grid.extend_velocity(); // done
   grid_to_particles();    // done
   for (int i = 0; i < 5; i++)
     advect(0.2 * dt); // done

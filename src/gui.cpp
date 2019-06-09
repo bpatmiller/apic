@@ -32,6 +32,8 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   // set up simulation
   simulation.init(lx_, nx_, ny_, nz_);
   simulation.add_particle_box();
+  std::cout << "running apic simulation with " << simulation.particles.size()
+            << " particles" << std::endl;
 
   // compile shaders
   fluid_program =

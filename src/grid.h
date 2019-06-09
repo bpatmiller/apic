@@ -2,6 +2,8 @@
 
 #include "array3.h"
 
+#include <eigen3/Eigen/SparseCore>
+
 #define AIR_CELL 0
 #define FLUID_CELL 1
 #define SOLID_CELL 2
@@ -15,16 +17,22 @@ public:
   float h;          // size of each cell
 
   Array3f u, v, w;    // velocities
-  Array3f du, dv, dw; // saved velocities (flip)
   Array3f count;      // keep track of how many particles
                       // are near each grid node
-  Array3i marker;     // liquid, air, solid
-  Array3f phi;        // used for velocity extrapolation
+                      // (normalizing velocity field)
+  Array3i marker;     // air, fluid, solid
+  Array3f phi;        // signed distances
   Array3f pressure;   // self explanatory
+  Array3f rho;        // density
+
   Array3v3 poission;  //
   Array3f precon;     //
-  Array3f m;          // masses
+  Array3f m;          //
   Array3f r, z, s;    //
+
+  // used for pressure solve
+  Eigen::SparseMatrix<float> A;
+  Eigen::VectorXf x, b;
 
   Grid() {}
 
@@ -72,4 +80,8 @@ public:
   void enforce_boundary();
   void project();
   void compute_divergence();
+  void compute_A();
+  void compute_b();
+  void solve_pressure();
+  void add_pressure_gradient();
 };
