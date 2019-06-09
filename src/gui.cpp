@@ -37,6 +37,8 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   fluid_program =
       Program("src/shaders/particle.vs", "", "src/shaders/particle.fs", "");
   grid_program = Program("src/shaders/grid.vs", "", "src/shaders/grid.fs", "");
+  velocity_program =
+      Program("src/shaders/vel.vs", "", "src/shaders/vel.fs", "");
 
   // set up particle VAO
   std::vector<glm::vec3> sphere_vertices;
@@ -58,14 +60,12 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   box_indices = {{0, 1, 2}, {1, 3, 2}, {4, 6, 5}, {5, 6, 7},
                  {0, 5, 1}, {0, 4, 5}, {2, 3, 7}, {2, 7, 6},
                  {3, 1, 5}, {3, 5, 7}, {0, 2, 6}, {0, 6, 4}};
-  // FIXME populate grid offsets
   grid_offsets.resize(simulation.grid.phi.size);
-
- // grid_offsets.reserve(simulation.grid.phi.size);
   for (int i = 0; i < simulation.grid.phi.sx; i++) {
     for (int j = 0; j < simulation.grid.phi.sy; j++) {
       for (int k = 0; k < simulation.grid.phi.sz; k++) {
-        grid_offsets[i + (simulation.grid.phi.sx * j) + (simulation.grid.phi.sx * simulation.grid.phi.sy * k)] =
+        grid_offsets[i + (simulation.grid.phi.sx * j) +
+                     (simulation.grid.phi.sx * simulation.grid.phi.sy * k)] =
             glm::vec4(h * i, h * j, h * k, 1.0f);
       }
     }
@@ -74,6 +74,27 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   grid_vao.setLayout({4}, true);
   grid_vao.vb.set(box_vertices);
   grid_vao.ib.set(grid_offsets);
+
+  // set up velocity field vao
+  std::vector<glm::vec3> vel_vertices = {{0.0f, 0.0f, 0.0f},
+                                         {0.01f, 1.0f, 0.0f},
+                                         {0.02f, 0.0f, 0.0f}};
+                                           vel_indices = {{0, 1, 2}};
+  vel_offsets.resize(simulation.grid.phi.size);
+  for (int i = 0; i < simulation.grid.phi.sx; i++) {
+    for (int j = 0; j < simulation.grid.phi.sy; j++) {
+      for (int k = 0; k < simulation.grid.phi.sz; k++) {
+        glm::vec3 p = glm::vec3(h * i, h * j, h * k);
+        vel_offsets[i + (simulation.grid.phi.sx * j) +
+                    (simulation.grid.phi.sx * simulation.grid.phi.sy * k)] = {
+            p, simulation.trilerp_uvw(p)};
+      }
+    }
+  }
+  velocity_vao.setLayout({3}, false);
+  velocity_vao.setLayout({3, 3}, true);
+  velocity_vao.vb.set(vel_vertices);
+  velocity_vao.ib.set(vel_offsets);
 
   // some gl settings
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -87,7 +108,7 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
 }
 
 void GUI::update_camera() {
-  if (mouse_diff == glm::vec2(0,0))
+  if (mouse_diff == glm::vec2(0, 0))
     return;
   mouse_diff *= -0.005f;
 
@@ -104,8 +125,8 @@ void GUI::update() {
   glfwGetWindowSize(window, &window_dims.x, &window_dims.y);
   glViewport(0, 0, window_dims.x, window_dims.y);
 
-  eye =
-      focus + glm::vec3(glm::mat4_cast(orientation) * glm::vec4(base_eye, 1.0));
+  eye = focus + glm::vec3(glm::mat4_cast(orientation) *
+                          glm::vec4(base_eye - focus, 1.0));
   view_matrix = glm::lookAt(eye, focus, UP);
   projection_matrix = glm::perspective(
       glm::radians(60.0f), ((float)window_dims.x) / window_dims.y, 0.01f, 30.f);
@@ -139,19 +160,21 @@ void GUI::update() {
     simulation.step_frame(frame_time);
     fluid.ib.update(simulation.particles, 0);
   }
-  // update grid vao
-  for (int i = 0; i < simulation.grid.phi.sx; i++) {
-    for (int j = 0; j < simulation.grid.phi.sy; j++) {
-      for (int k = 0; k < simulation.grid.phi.sz; k++) {
-        grid_offsets[i + (simulation.grid.phi.sx * j) +
-        (simulation.grid.phi.sx * simulation.grid.phi.sy * k)][3] = simulation.grid.phi(i,j,k);
-      }
-    }
-  }
-  grid_vao.ib.update(grid_offsets, 0);
 
   // render the grid
   if (draw_grid) {
+    // update grid vao
+    for (int i = 0; i < simulation.grid.phi.sx; i++) {
+      for (int j = 0; j < simulation.grid.phi.sy; j++) {
+        for (int k = 0; k < simulation.grid.phi.sz; k++) {
+          grid_offsets[i + (simulation.grid.phi.sx * j) +
+                       (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
+                      [3] = simulation.grid.phi(i, j, k);
+        }
+      }
+    }
+    grid_vao.ib.update(grid_offsets, 0);
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     grid_program.use();
     grid_program.setMat4("projection", projection_matrix);
@@ -161,6 +184,31 @@ void GUI::update() {
                             GL_UNSIGNED_INT, box_indices.data(),
                             simulation.grid.phi.size);
     // FIXME maybe pick a better size indicator
+  }
+
+  if (draw_velocity) {
+    // update vao
+    for (int i = 0; i < simulation.grid.phi.sx; i++) {
+      for (int j = 0; j < simulation.grid.phi.sy; j++) {
+        for (int k = 0; k < simulation.grid.phi.sz; k++) {
+          glm::vec3 p = glm::vec3(simulation.grid.h * i, simulation.grid.h * j,
+                                  simulation.grid.h * k);
+          vel_offsets[i + (simulation.grid.phi.sx * j) +
+                      (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
+                     [1] = simulation.trilerp_uvw(p);
+        }
+      }
+    }
+    velocity_vao.ib.update(vel_offsets, 0);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    velocity_program.use();
+    velocity_program.setMat4("projection", projection_matrix);
+    velocity_program.setMat4("view", view_matrix);
+    velocity_vao.bind();
+    glDrawElementsInstanced(GL_TRIANGLES, vel_indices.size() * 3,
+                            GL_UNSIGNED_INT, vel_indices.data(),
+                            simulation.grid.phi.size);
   }
 
   // render the fluid

@@ -12,14 +12,19 @@ void glfw_error_callback(int error, const char *description) {
 // KEY CALLBACKS
 void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
                  int mods) {
-  
-    GUI *gui = (GUI *)glfwGetWindowUserPointer(window);
+
+  GUI *gui = (GUI *)glfwGetWindowUserPointer(window);
 
   if (key == GLFW_KEY_Q) {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
     return;
+  } else if (key == GLFW_KEY_G && action == GLFW_RELEASE) {
+    gui->draw_grid = !gui->draw_grid;
+  } else if (key == GLFW_KEY_V && action == GLFW_RELEASE) {
+    gui->draw_velocity = !gui->draw_velocity;
   }
-  else if (action == GLFW_PRESS) {
+
+  if (action == GLFW_PRESS) {
     gui->keyHeld[key] = true;
   } else if (action == GLFW_RELEASE) {
     gui->keyHeld[key] = false;
@@ -58,7 +63,7 @@ int main(int argc, char *argv[]) {
   glfwSetWindowUserPointer(window, &gui);
   // key / mouse callbacks
   glfwSetKeyCallback(window, KeyCallback);
-    glfwSetCursorPosCallback(window, MousePosCallback);
+  glfwSetCursorPosCallback(window, MousePosCallback);
   glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
   gui.init(2.0f, 10, 10, 10);

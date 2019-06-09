@@ -273,15 +273,15 @@ void Simulation::mark_cells() {
 
 void Simulation::advance(float dt) {
   // std::cout << "advance(" << dt << ")" << std::endl;
-  particles_to_grid();  // done
-  grid.add_gravity(dt); // done
-  mark_cells();       // done
-  grid.compute_phi(); // done
-  grid.extend_velocity();   //todo
+  particles_to_grid();    // done
+  grid.add_gravity(dt);   // done
+  mark_cells();           // done
+  grid.compute_phi();     // done
+  grid.extend_velocity(); // todo
   //   grid.enforce_boundary();  //todo
   //   grid.project();   //todo (big one)
-  grid.extend_velocity();   //todo
-  grid_to_particles(); // done
+  grid.extend_velocity(); // todo
+  grid_to_particles();    // done
   for (int i = 0; i < 5; i++)
     advect(0.2 * dt); // done
 }

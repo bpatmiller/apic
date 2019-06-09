@@ -18,19 +18,11 @@ void Grid::add_gravity(float dt) {
   }
 }
 
-void Grid::extend_velocity() {
+void Grid::extend_velocity() {}
 
-}
-
-  void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {
-
-  }
-  void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {
-
-  }
-  void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {
-
-  }
+void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {}
+void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {}
+void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {}
 void Grid::enforce_boundary() {}
 void Grid::project() {}
 
