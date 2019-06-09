@@ -24,26 +24,74 @@ void Grid::extend_velocity() {
   }
 }
 
-void Grid::sweep_velocity() {
-  // sweep u in all 8 directions
-  sweep_u(1, u.sx-1, 1, u.sy-1, 1, u.sz-1);
-  sweep_u(1, u.sx-1, 1, u.sy-1, u.sz-2, 0);
-  sweep_u(1, u.sx-1, u.sy-2, 0, 1, u.sz-1);
-  sweep_u(1, u.sx-1, u.sy-2, 0, u.sz-2, 0);
-  sweep_u(u.sx-2, 0, 1, u.sy-1, 1, u.sz-1);
-  sweep_u(u.sx-2, 0, 1, u.sy-1, u.sz-2, 0);
-  sweep_u(u.sx-2, 0, u.sy-2, 0, 1, u.sz-1);
-  sweep_u(u.sx-2, 0, u.sy-2, 0, u.sz-2, 0);
-  // set boundary cells
-  
-
-
-
+void Grid::sweep_velocity_boundary(Array3f &arr) {
+  // top and bottom
+  for (int i = 0; i < arr.sx; i++) {
+    for (int k = 0; k < arr.sz; k++) {
+      arr(i, 0, k) = arr(i, 1, k);
+      arr(i, arr.sy - 1, k) = arr(i, arr.sy - 2, k);
+    }
+  }
+  // left and right
+  for (int j = 0; j < arr.sy; j++) {
+    for (int k = 0; k < arr.sz; k++) {
+      arr(0, j, k) = arr(1, j, k);
+      arr(arr.sx - 1, j, k) = arr(arr.sx - 2, j, k);
+    }
+  }
+  // front and back
+  for (int i = 0; i < arr.sx; i++) {
+    for (int j = 0; j < arr.sy; j++) {
+      arr(i, j, 0) = arr(i, j, 1);
+      arr(i, j, arr.sz - 1) = arr(i, j, arr.sz - 2);
+    }
+  }
 }
-void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {}
+
+void Grid::sweep_velocity() {
+  // U --------------------------------
+  sweep_u(1, u.sx - 1, 1, u.sy - 1, 1, u.sz - 1);
+  sweep_u(1, u.sx - 1, 1, u.sy - 1, u.sz - 2, 0);
+  sweep_u(1, u.sx - 1, u.sy - 2, 0, 1, u.sz - 1);
+  sweep_u(1, u.sx - 1, u.sy - 2, 0, u.sz - 2, 0);
+  sweep_u(u.sx - 2, 0, 1, u.sy - 1, 1, u.sz - 1);
+  sweep_u(u.sx - 2, 0, 1, u.sy - 1, u.sz - 2, 0);
+  sweep_u(u.sx - 2, 0, u.sy - 2, 0, 1, u.sz - 1);
+  sweep_u(u.sx - 2, 0, u.sy - 2, 0, u.sz - 2, 0);
+  // set boundary cells
+  sweep_velocity_boundary(u);
+
+  // V --------------------------------
+  sweep_v(1, v.sx - 1, 1, v.sy - 1, 1, v.sz - 1);
+  sweep_v(1, v.sx - 1, 1, v.sy - 1, v.sz - 2, 0);
+  sweep_v(1, v.sx - 1, v.sy - 2, 0, 1, v.sz - 1);
+  sweep_v(1, v.sx - 1, v.sy - 2, 0, v.sz - 2, 0);
+  sweep_v(v.sx - 2, 0, 1, v.sy - 1, 1, v.sz - 1);
+  sweep_v(v.sx - 2, 0, 1, v.sy - 1, v.sz - 2, 0);
+  sweep_v(v.sx - 2, 0, v.sy - 2, 0, 1, v.sz - 1);
+  sweep_v(v.sx - 2, 0, v.sy - 2, 0, v.sz - 2, 0);
+  // set boundary cells
+  sweep_velocity_boundary(v);
+
+  // W --------------------------------
+  sweep_w(1, w.sx - 1, 1, w.sy - 1, 1, w.sz - 1);
+  sweep_w(1, w.sx - 1, 1, w.sy - 1, w.sz - 2, 0);
+  sweep_w(1, w.sx - 1, w.sy - 2, 0, 1, w.sz - 1);
+  sweep_w(1, w.sx - 1, w.sy - 2, 0, w.sz - 2, 0);
+  sweep_w(w.sx - 2, 0, 1, w.sy - 1, 1, w.sz - 1);
+  sweep_w(w.sx - 2, 0, 1, w.sy - 1, w.sz - 2, 0);
+  sweep_w(w.sx - 2, 0, w.sy - 2, 0, 1, w.sz - 1);
+  sweep_w(w.sx - 2, 0, w.sy - 2, 0, w.sz - 2, 0);
+  // set boundary cells
+  sweep_velocity_boundary(w);
+}
+void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {
+  //  int di=(i0<i1) ? 1 : -1;
+  //  int dj=(j0<j1) ? 1 : -1;
+  //  int dk=(k0<k1) ? 1 : -1;
+}
 void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {}
 void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {}
-
 
 void Grid::enforce_boundary() {
   // TODO
@@ -174,4 +222,17 @@ void Grid::solve_phi(float p, float q, float r, float &c) {
   // }
   if (md < c)
     c = md;
+}
+
+void Grid::compute_divergence() {
+  r.clear();
+  for (int i = 0; i < r.sx; i++) {
+    for (int j = 0; j < r.sy; j++) {
+      for (int k = 0; k < r.sz; k++) {
+        if (marker(i, j, k) == FLUID_CELL)
+          r(i, j, k) = u(i + 1, j, k) - u(i, j, k) + v(i, j + 1, k) -
+                       v(i, j, k) + w(i, j, k + 1) - w(i, j, k);
+      }
+    }
+  }
 }

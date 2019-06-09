@@ -83,7 +83,8 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   for (int i = 0; i < simulation.grid.phi.sx; i++) {
     for (int j = 0; j < simulation.grid.phi.sy; j++) {
       for (int k = 0; k < simulation.grid.phi.sz; k++) {
-        glm::vec3 p = glm::vec3(h * i + 0.5f*h, h * j + 0.5f*h, h * k + 0.5f*h);
+        glm::vec3 p =
+            glm::vec3(h * i + 0.5f * h, h * j + 0.5f * h, h * k + 0.5f * h);
         vel_offsets[i + (simulation.grid.phi.sx * j) +
                     (simulation.grid.phi.sx * simulation.grid.phi.sy * k)] = {
             p, simulation.trilerp_uvw(p)};
@@ -186,12 +187,13 @@ void GUI::update() {
   }
 
   if (draw_velocity) {
-          float offs = simulation.grid.h * 0.5;
+    float offs = simulation.grid.h * 0.5;
     // update vao
     for (int i = 0; i < simulation.grid.phi.sx; i++) {
       for (int j = 0; j < simulation.grid.phi.sy; j++) {
         for (int k = 0; k < simulation.grid.phi.sz; k++) {
-          glm::vec3 p = glm::vec3(simulation.grid.h * i + offs, simulation.grid.h * j + offs,
+          glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
+                                  simulation.grid.h * j + offs,
                                   simulation.grid.h * k + offs);
 
           vel_offsets[i + (simulation.grid.phi.sx * j) +

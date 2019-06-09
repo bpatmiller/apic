@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   glfwSetCursorPosCallback(window, MousePosCallback);
   glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
-  gui.init(2.0f, 10, 10, 10);
+  gui.init(2.0f, 15, 15, 15);
   while (!glfwWindowShouldClose(window)) {
     gui.update();
     glfwSwapBuffers(window);
