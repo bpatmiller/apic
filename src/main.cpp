@@ -12,10 +12,32 @@ void glfw_error_callback(int error, const char *description) {
 // KEY CALLBACKS
 void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
                  int mods) {
+  
+    GUI *gui = (GUI *)glfwGetWindowUserPointer(window);
+
   if (key == GLFW_KEY_Q) {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
     return;
   }
+  else if (action == GLFW_PRESS) {
+    gui->keyHeld[key] = true;
+  } else if (action == GLFW_RELEASE) {
+    gui->keyHeld[key] = false;
+  }
+}
+
+void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
+  GUI *gui = (GUI *)glfwGetWindowUserPointer(window);
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action != GLFW_RELEASE) {
+    gui->mouse_pressed = true;
+  } else {
+    gui->mouse_pressed = false;
+  }
+}
+
+void MousePosCallback(GLFWwindow *window, double mouse_x, double mouse_y) {
+  GUI *gui = (GUI *)glfwGetWindowUserPointer(window);
+  gui->mouse_pos = glm::vec2(mouse_x, mouse_y);
 }
 
 int main(int argc, char *argv[]) {
@@ -36,8 +58,10 @@ int main(int argc, char *argv[]) {
   glfwSetWindowUserPointer(window, &gui);
   // key / mouse callbacks
   glfwSetKeyCallback(window, KeyCallback);
+    glfwSetCursorPosCallback(window, MousePosCallback);
+  glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
-  gui.init(2.0f, 20, 20, 20);
+  gui.init(2.0f, 10, 10, 10);
   while (!glfwWindowShouldClose(window)) {
     gui.update();
     glfwSwapBuffers(window);

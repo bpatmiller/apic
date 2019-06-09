@@ -64,6 +64,9 @@ public:
   void sweep_phi();
   void solve_phi(float p, float q, float r, float &c);
   void extend_velocity();
+  void sweep_u(int i0, int i1, int j0, int j1, int k0, int k1);
+  void sweep_v(int i0, int i1, int j0, int j1, int k0, int k1);
+  void sweep_w(int i0, int i1, int j0, int j1, int k0, int k1);
   void enforce_boundary();
   void project();
 };

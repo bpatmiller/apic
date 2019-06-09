@@ -86,6 +86,19 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   //   glLineWidth(2.0f);
 }
 
+void GUI::update_camera() {
+  if (mouse_diff == glm::vec2(0,0))
+    return;
+  mouse_diff *= -0.005f;
+
+  pitch = std::max(-1.5f, std::min(1.5f, pitch + mouse_diff.y));
+  yaw += mouse_diff.x;
+
+  glm::quat qyaw = glm::angleAxis(yaw, UP);
+  glm::quat qpitch = glm::angleAxis(pitch, SIDE);
+  orientation = qyaw * qpitch;
+}
+
 void GUI::update() {
   // update camera vars
   glfwGetWindowSize(window, &window_dims.x, &window_dims.y);
@@ -97,14 +110,35 @@ void GUI::update() {
   projection_matrix = glm::perspective(
       glm::radians(60.0f), ((float)window_dims.x) / window_dims.y, 0.01f, 30.f);
 
+  // handle mouse movement
+  bool first = (mouse_pos_prev == glm::vec2(-1, -1));
+  if (mouse_pressed) {
+    if (!first) {
+      mouse_diff = mouse_pos - mouse_pos_prev;
+      update_camera();
+    }
+  }
+  mouse_pos_prev = mouse_pos;
+
+  // handle keypress
+  if (keyHeld[GLFW_KEY_W]) {
+    if (base_eye.z > 0.2f) {
+      base_eye.z -= 0.1f;
+    }
+  }
+  if (keyHeld[GLFW_KEY_S]) {
+    base_eye.z += 0.1f;
+  }
+
   // clear the renderer
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // step the simulation, copy the new particle data
   float frame_time = 0.05;
-  simulation.step_frame(frame_time);
-  fluid.ib.update(simulation.particles, 0);
-
+  if (keyHeld[GLFW_KEY_P]) {
+    simulation.step_frame(frame_time);
+    fluid.ib.update(simulation.particles, 0);
+  }
   // update grid vao
   for (int i = 0; i < simulation.grid.phi.sx; i++) {
     for (int j = 0; j < simulation.grid.phi.sy; j++) {
