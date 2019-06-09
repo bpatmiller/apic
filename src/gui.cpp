@@ -76,15 +76,14 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   grid_vao.ib.set(grid_offsets);
 
   // set up velocity field vao
-  std::vector<glm::vec3> vel_vertices = {{0.0f, 0.0f, 0.0f},
-                                         {0.01f, 1.0f, 0.0f},
-                                         {0.02f, 0.0f, 0.0f}};
-                                           vel_indices = {{0, 1, 2}};
+  std::vector<glm::vec3> vel_vertices = {
+      {0.0f, 0.0f, 0.0f}, {0.01f, 1.0f, 0.0f}, {0.02f, 0.0f, 0.0f}};
+  vel_indices = {{0, 1, 2}};
   vel_offsets.resize(simulation.grid.phi.size);
   for (int i = 0; i < simulation.grid.phi.sx; i++) {
     for (int j = 0; j < simulation.grid.phi.sy; j++) {
       for (int k = 0; k < simulation.grid.phi.sz; k++) {
-        glm::vec3 p = glm::vec3(h * i, h * j, h * k);
+        glm::vec3 p = glm::vec3(h * i + 0.5f*h, h * j + 0.5f*h, h * k + 0.5f*h);
         vel_offsets[i + (simulation.grid.phi.sx * j) +
                     (simulation.grid.phi.sx * simulation.grid.phi.sy * k)] = {
             p, simulation.trilerp_uvw(p)};
@@ -187,12 +186,14 @@ void GUI::update() {
   }
 
   if (draw_velocity) {
+          float offs = simulation.grid.h * 0.5;
     // update vao
     for (int i = 0; i < simulation.grid.phi.sx; i++) {
       for (int j = 0; j < simulation.grid.phi.sy; j++) {
         for (int k = 0; k < simulation.grid.phi.sz; k++) {
-          glm::vec3 p = glm::vec3(simulation.grid.h * i, simulation.grid.h * j,
-                                  simulation.grid.h * k);
+          glm::vec3 p = glm::vec3(simulation.grid.h * i + offs, simulation.grid.h * j + offs,
+                                  simulation.grid.h * k + offs);
+
           vel_offsets[i + (simulation.grid.phi.sx * j) +
                       (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
                      [1] = simulation.trilerp_uvw(p);

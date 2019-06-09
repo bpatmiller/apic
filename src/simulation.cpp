@@ -13,7 +13,7 @@
 // initialize "dam break" scenario
 void Simulation::add_particle_box() {
   for (int x = 1; x < grid.nx - 1; x++) {
-    for (int y = grid.ny / 3; y < grid.ny - 1; y++) {
+    for (int y = grid.ny * 0.75f; y < grid.ny - 1; y++) {
       for (int z = 1; z < grid.nz - 1; z++) {
         // for each cell, add 8 new jittered particles
         float base_x = x * grid.h;
