@@ -19,15 +19,39 @@ void Grid::add_gravity(float dt) {
 }
 
 void Grid::extend_velocity() {
-  // sweep u in 8 directions
+  for (int i = 0; i < 4; i++) {
+    sweep_velocity();
+  }
 }
 
+void Grid::sweep_velocity() {
+  // sweep u in all 8 directions
+  sweep_u(1, u.sx-1, 1, u.sy-1, 1, u.sz-1);
+  sweep_u(1, u.sx-1, 1, u.sy-1, u.sz-2, 0);
+  sweep_u(1, u.sx-1, u.sy-2, 0, 1, u.sz-1);
+  sweep_u(1, u.sx-1, u.sy-2, 0, u.sz-2, 0);
+  sweep_u(u.sx-2, 0, 1, u.sy-1, 1, u.sz-1);
+  sweep_u(u.sx-2, 0, 1, u.sy-1, u.sz-2, 0);
+  sweep_u(u.sx-2, 0, u.sy-2, 0, 1, u.sz-1);
+  sweep_u(u.sx-2, 0, u.sy-2, 0, u.sz-2, 0);
+  // set boundary cells
+  
+
+
+
+}
 void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {}
 void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {}
 void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {}
 
-void Grid::enforce_boundary() {}
-void Grid::project() {}
+
+void Grid::enforce_boundary() {
+  // TODO
+  // just zero out velocity components normal to the 6 cube faces
+}
+void Grid::project() {
+  // TODO yeet lol
+}
 
 void Grid::compute_phi() {
   // init
