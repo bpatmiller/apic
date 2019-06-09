@@ -22,6 +22,7 @@ public:
   void advect(float dt);
   void advance(float dt);
   void step_frame(float time);
+  void mark_cells();
 
   // helper functions
   void position_to_grid(glm::vec3 p, glm::vec3 offset, glm::ivec3 &index,

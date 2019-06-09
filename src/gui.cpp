@@ -36,6 +36,7 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   // compile shaders
   fluid_program =
       Program("src/shaders/particle.vs", "", "src/shaders/particle.fs", "");
+  grid_program = Program("src/shaders/grid.vs", "", "src/shaders/grid.fs", "");
 
   // set up particle VAO
   std::vector<glm::vec3> sphere_vertices;
@@ -44,6 +45,35 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   fluid.setLayout({3, 1, 3, 1}, true);
   fluid.vb.set(sphere_vertices);
   fluid.ib.set(simulation.particles);
+
+  // set up grid VAO
+  std::vector<glm::vec3> box_vertices = {
+      {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f},
+      {1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f},
+      {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}};
+  float h = simulation.grid.h;
+  for (auto &v : box_vertices) {
+    v *= h;
+  }
+  box_indices = {{0, 1, 2}, {1, 3, 2}, {4, 6, 5}, {5, 6, 7},
+                 {0, 5, 1}, {0, 4, 5}, {2, 3, 7}, {2, 7, 6},
+                 {3, 1, 5}, {3, 5, 7}, {0, 2, 6}, {0, 6, 4}};
+  // FIXME populate grid offsets
+  grid_offsets.resize(simulation.grid.phi.size);
+
+ // grid_offsets.reserve(simulation.grid.phi.size);
+  for (int i = 0; i < simulation.grid.phi.sx; i++) {
+    for (int j = 0; j < simulation.grid.phi.sy; j++) {
+      for (int k = 0; k < simulation.grid.phi.sz; k++) {
+        grid_offsets[i + (simulation.grid.phi.sx * j) + (simulation.grid.phi.sx * simulation.grid.phi.sy * k)] =
+            glm::vec4(h * i, h * j, h * k, 1.0f);
+      }
+    }
+  }
+  grid_vao.setLayout({3}, false);
+  grid_vao.setLayout({4}, true);
+  grid_vao.vb.set(box_vertices);
+  grid_vao.ib.set(grid_offsets);
 
   // some gl settings
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -75,7 +105,32 @@ void GUI::update() {
   simulation.step_frame(frame_time);
   fluid.ib.update(simulation.particles, 0);
 
-  // use/render the fluid
+  // update grid vao
+  for (int i = 0; i < simulation.grid.phi.sx; i++) {
+    for (int j = 0; j < simulation.grid.phi.sy; j++) {
+      for (int k = 0; k < simulation.grid.phi.sz; k++) {
+        grid_offsets[i + (simulation.grid.phi.sx * j) +
+        (simulation.grid.phi.sx * simulation.grid.phi.sy * k)][3] = simulation.grid.phi(i,j,k);
+      }
+    }
+  }
+  grid_vao.ib.update(grid_offsets, 0);
+
+  // render the grid
+  if (draw_grid) {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    grid_program.use();
+    grid_program.setMat4("projection", projection_matrix);
+    grid_program.setMat4("view", view_matrix);
+    grid_vao.bind();
+    glDrawElementsInstanced(GL_TRIANGLES, box_indices.size() * 3,
+                            GL_UNSIGNED_INT, box_indices.data(),
+                            simulation.grid.phi.size);
+    // FIXME maybe pick a better size indicator
+  }
+
+  // render the fluid
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   fluid_program.use();
   fluid_program.setMat4("projection", projection_matrix);
   fluid_program.setMat4("view", view_matrix);

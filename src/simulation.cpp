@@ -7,6 +7,7 @@
 #define U_OFFSET glm::vec3(0.5f, 0, 0)
 #define V_OFFSET glm::vec3(0, 0.5f, 0)
 #define W_OFFSET glm::vec3(0, 0, 0.5f)
+
 #define EPS 0.001
 
 // initialize "dam break" scenario
@@ -66,7 +67,8 @@ void Simulation::position_to_grid(glm::vec3 p, glm::vec3 offset,
 
   // check for out of bounds
   if (i < 0 || j < 0 || k < 0)
-    std::cerr << "ERROR: invalid index || position: " << glm::to_string(p) << std::endl;
+    std::cerr << "ERROR: invalid index || position: " << glm::to_string(p)
+              << std::endl;
 
   float bx = nx - std::floor(nx);
   float by = ny - std::floor(ny);
@@ -154,7 +156,6 @@ void Simulation::particles_to_grid() {
       for (int k = 0; k < grid.v.sz; k++) {
         if (grid.count(i, j, k) != 0) {
           grid.v(i, j, k) /= grid.count(i, j, k);
-          std::cout << "v(" << i << "," << j << "," << k << "): " << grid.v(i,j,k) << std::endl;
         }
       }
     }
@@ -213,11 +214,69 @@ void Simulation::advect(float dt) {
   }
 }
 
+void Simulation::mark_cells() {
+  // start by setting cells as empty
+  grid.marker.clear();
+
+  // mark liquid cells
+  glm::ivec3 index;
+  glm::vec3 coords;
+  for (Particle &p : particles) {
+    position_to_grid(p.position, glm::vec3(0.5f, 0.5f, 0.5f), index, coords);
+    grid.marker(index.x, index.y, index.z) = FLUID_CELL;
+  }
+
+  // mark solid cells
+  int x, y, z;
+  // top and bottom (y axis)
+  y = grid.marker.sy - 1;
+  for (int i = 0; i < grid.marker.sx; i++) {
+    for (int k = 0; k < grid.marker.sy; k++) {
+      grid.marker(i, y, k) = SOLID_CELL;
+    }
+  }
+  y = 0;
+  for (int i = 0; i < grid.marker.sx; i++) {
+    for (int k = 0; k < grid.marker.sy; k++) {
+      grid.marker(i, y, k) = SOLID_CELL;
+    }
+  }
+
+  // left and right (x axis)
+  x = grid.marker.sx - 1;
+  for (int j = 0; j < grid.marker.sy; j++) {
+    for (int k = 0; k < grid.marker.sz; k++) {
+      grid.marker(x, j, k) = SOLID_CELL;
+    }
+  }
+  x = 0;
+  for (int j = 0; j < grid.marker.sy; j++) {
+    for (int k = 0; k < grid.marker.sz; k++) {
+      grid.marker(x, j, k) = SOLID_CELL;
+    }
+  }
+
+  // front and back (z axis)
+  z = grid.marker.sz - 1;
+  for (int i = 0; i < grid.marker.sx; i++) {
+    for (int j = 0; j < grid.marker.sy; j++) {
+      grid.marker(i, j, z) = SOLID_CELL;
+    }
+  }
+  z = 0;
+  for (int i = 0; i < grid.marker.sx; i++) {
+    for (int j = 0; j < grid.marker.sy; j++) {
+      grid.marker(i, j, z) = SOLID_CELL;
+    }
+  }
+}
+
 void Simulation::advance(float dt) {
-  std::cout << "advance(" << dt << ")" << std::endl;
+  // std::cout << "advance(" << dt << ")" << std::endl;
   particles_to_grid();  // done
   grid.add_gravity(dt); // done
-  // grid.compute_phi();   //todo
+  mark_cells();
+  grid.compute_phi(); // todo
   //   grid.extend_velocity();   //todo
   //   grid.enforce_boundary();  //todo
   //   grid.project();   //todo (big one)

@@ -33,6 +33,12 @@ public:
   VAO fluid;
   std::vector<glm::uvec3> sphere_indices;
 
+  Program grid_program;
+  VAO grid_vao;
+  std::vector<glm::uvec3> box_indices;
+  std::vector<glm::vec4> grid_offsets;
+  bool draw_grid = true;
+
   // helper functions
   void create_sphere(float Radius, std::vector<glm::vec3> &s_vertices);
 };

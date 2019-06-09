@@ -2,6 +2,10 @@
 
 #include "array3.h"
 
+#define AIR_CELL 0
+#define FLUID_CELL 1
+#define SOLID_CELL 2
+
 class Grid {
 public:
   float gravity = -9.8;
@@ -45,6 +49,7 @@ public:
 
     marker.init(nx, ny, nz);
     phi.init(nx, ny, nz);
+
     poission.init(nx, ny, nz);
     precon.init(nx, ny, nz);
     m.init(nx, ny, nz);
@@ -57,6 +62,7 @@ public:
   void add_gravity(float dt);
   void compute_phi();
   void sweep_phi();
+  void solve_phi(float p, float q, float r, float &c);
   void extend_velocity();
   void enforce_boundary();
   void project();
