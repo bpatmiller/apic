@@ -22,6 +22,20 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
     gui->draw_grid = !gui->draw_grid;
   } else if (key == GLFW_KEY_V && action == GLFW_RELEASE) {
     gui->draw_velocity = !gui->draw_velocity;
+  } else if (key == GLFW_KEY_1 && action == GLFW_RELEASE) {
+    gui->simulation.mode = 0;
+    std::cout << "PIC mode" << std::endl;
+  } else if (key == GLFW_KEY_2 && action == GLFW_RELEASE) {
+    gui->simulation.mode = 1;
+    std::cout << "PIC/FLIP mode" << std::endl;
+  } else if (key == GLFW_KEY_3 && action == GLFW_RELEASE) {
+    gui->simulation.mode = 2;
+    std::cout << "APIC mode" << std::endl;
+  } else if (key == GLFW_KEY_O && action == GLFW_RELEASE) {
+    std::cout << "resetting simulation" << std::endl;
+    gui->simulation.reset();
+    // manually update one frame
+    gui->update(true);
   }
 
   if (action == GLFW_PRESS) {

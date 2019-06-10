@@ -8,12 +8,11 @@
 #define V_OFFSET glm::vec3(0, 0.5f, 0)
 #define W_OFFSET glm::vec3(0, 0, 0.5f)
 
-#define FLIP_MODE 0
-
 #define EPS 0.001
 
 // initialize "dam break" scenario
 void Simulation::add_particle_box() {
+  particles.clear();
   for (int x = grid.nx * 0.4; x < grid.nx - 2; x++) {
     for (int y = 2; y < grid.ny - 2; y++) {
       for (int z = 2; z < grid.nz - 2; z++) {
@@ -216,7 +215,8 @@ void Simulation::particles_to_grid() {
 }
 
 void Simulation::grid_to_particles() {
-  if (FLIP_MODE) {
+  // pic flip velocity differences
+  if (mode == PIC_FLIP_MODE) {
     for (int i = 0; i < grid.u.size; i++) {
       grid.du.data[i] = grid.u.data[i] - grid.du.data[i];
     }
@@ -230,10 +230,15 @@ void Simulation::grid_to_particles() {
 
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
-    if (FLIP_MODE) {
-      p.velocity += trilerp_dudvdw(p.position);
-    } else {
+    if (mode == PIC_FLIP_MODE) {
+      p.velocity =
+          (flip_blend * trilerp_uvw(p.position)) +
+          (1.0f - flip_blend) * (p.velocity + trilerp_dudvdw(p.position));
+
+    } else if (mode == PIC_MODE) {
       p.velocity = trilerp_uvw(p.position);
+    } else if (mode == APIC_MODE) {
+      // TODO
     }
   }
 }

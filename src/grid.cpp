@@ -602,5 +602,4 @@ void Grid::compute_divergence() {
       }
     }
   }
-  r.copy(rc);
 }

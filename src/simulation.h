@@ -5,16 +5,27 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#define PIC_MODE 0
+#define PIC_FLIP_MODE 1
+#define APIC_MODE 2
+
 class Simulation {
 public:
   Grid grid;
   std::vector<Particle> particles;
+  int mode = 1;
+  float flip_blend = 0.25f;
 
   Simulation(){};
 
   void init(float lx_, int nx_, int ny_, int nz_) {
     grid.init(lx_, nx_, ny_, nz_);
   }
+
+  void reset() {
+    add_particle_box();
+    grid.reset();
+  };
 
   void add_particle_box();
   void particles_to_grid();

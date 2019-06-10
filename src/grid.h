@@ -29,10 +29,10 @@ public:
 
   Array3v3 lap_pres;
 
-  Array3v4 poisson;    // Adiag, Ax, Ay, Az
-  Array3d precon;      //
-  Array3d m;           //
-  Array3d r, rc, z, s; //
+  Array3v4 poisson; // Adiag, Ax, Ay, Az
+  Array3d precon;   //
+  Array3d m;        //
+  Array3d r, z, s;  //
 
   // used for pressure solve
   Eigen::SparseMatrix<double> A;
@@ -72,9 +72,31 @@ public:
     precon.init(nx, ny, nz);
     m.init(nx, ny, nz);
     r.init(nx, ny, nz);
-    rc.init(nx, ny, nz);
     z.init(nx, ny, nz);
     s.init(nx, ny, nz);
+  }
+
+  void reset() {
+    u.clear();
+    v.clear();
+    w.clear();
+    du.clear();
+    dv.clear();
+    dw.clear();
+    count.clear();
+    pressure.clear();
+    rho.clear();
+
+    lap_pres.clear();
+
+    marker.clear();
+    phi.clear();
+    poisson.clear();
+    precon.clear();
+    m.clear();
+    r.clear();
+    z.clear();
+    s.clear();
   }
 
   float CFL();

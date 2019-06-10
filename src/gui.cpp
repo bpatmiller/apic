@@ -122,7 +122,9 @@ void GUI::update_camera() {
   orientation = qyaw * qpitch;
 }
 
-void GUI::update() {
+void GUI::update() { update(false); }
+
+void GUI::update(bool force) {
   // update camera vars
   glfwGetWindowSize(window, &window_dims.x, &window_dims.y);
   glViewport(0, 0, window_dims.x, window_dims.y);
@@ -158,7 +160,7 @@ void GUI::update() {
 
   // step the simulation, copy the new particle data
   float frame_time = 0.05;
-  if (keyHeld[GLFW_KEY_P]) {
+  if (keyHeld[GLFW_KEY_P] || force) {
     simulation.step_frame(frame_time);
     fluid.ib.update(simulation.particles, 0);
   }
