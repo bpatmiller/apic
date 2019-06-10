@@ -12,9 +12,9 @@
 
 // initialize "dam break" scenario
 void Simulation::add_particle_box() {
-  for (int x = 1; x < grid.nx - 1; x++) {
-    for (int y = grid.ny * 0.75f; y < grid.ny - 1; y++) {
-      for (int z = 1; z < grid.nz - 1; z++) {
+  for (int x = grid.nx * 0.4; x < grid.nx - 2; x++) {
+    for (int y = 2; y < grid.ny - 2; y++) {
+      for (int z = 2; z < grid.nz - 2; z++) {
         // for each cell, add 8 new jittered particles
         float base_x = x * grid.h;
         float base_y = y * grid.h;
@@ -281,15 +281,15 @@ void Simulation::mark_cells() {
 }
 
 void Simulation::advance(float dt) {
-  particles_to_grid();  // done
-  grid.add_gravity(dt); // done
-  mark_cells();         // done
-  grid.compute_phi();   // done
-  // grid.extend_velocity();  // done
+  particles_to_grid();     // done
+  grid.add_gravity(dt);    // done
+  mark_cells();            // done
+  grid.compute_phi();      // done
+  grid.extend_velocity();  // done
   grid.enforce_boundary(); // done
-  // grid.project();          // todo
-  grid.extend_velocity(); // done
-  grid_to_particles();    // done
+  grid.project(dt);        // todo
+  grid.extend_velocity();  // done
+  grid_to_particles();     // done
   for (int i = 0; i < 5; i++)
     advect(0.2 * dt); // done
 }

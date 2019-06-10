@@ -12,9 +12,10 @@ class Grid {
 public:
   float gravity = -9.8;
 
-  float lx, ly, lz; // total length of grid
-  float nx, ny, nz; // number of cells per dimension
-  float h;          // size of each cell
+  float lx, ly, lz;  // total length of grid
+  float nx, ny, nz;  // number of cells per dimension
+  float h;           // size of each cell
+  float density = 8; // particles per cell
 
   Array3f u, v, w;  // velocities
   Array3f count;    // keep track of how many particles
@@ -22,13 +23,13 @@ public:
                     // (normalizing velocity field)
   Array3i marker;   // air, fluid, solid
   Array3f phi;      // signed distances
-  Array3f pressure; // self explanatory
+  Array3d pressure; // self explanatory
   Array3f rho;      // density
 
-  Array3v3 poission; //
-  Array3f precon;    //
-  Array3f m;         //
-  Array3f r, z, s;   //
+  Array3v4 poisson; // Adiag, Ax, Ay, Az
+  Array3d precon;   //
+  Array3d m;        //
+  Array3d r, z, s;  //
 
   // used for pressure solve
   Eigen::SparseMatrix<double> A;
@@ -59,7 +60,7 @@ public:
     marker.init(nx, ny, nz);
     phi.init(nx, ny, nz);
 
-    poission.init(nx, ny, nz);
+    poisson.init(nx, ny, nz);
     precon.init(nx, ny, nz);
     m.init(nx, ny, nz);
     r.init(nx, ny, nz);
@@ -80,12 +81,12 @@ public:
   void sweep_w(int i0, int i1, int j0, int j1, int k0, int k1);
   void enforce_boundary();
 
-  void project();
+  void project(float dt);
   void compute_divergence();
-  void form_poisson();
-  void apply_poisson();
+  void form_poisson(float dt);
+  void apply_poisson(Array3d &x, Array3d &y);
   void form_preconditioner();
-  void apply_preconditioner();
+  void apply_preconditioner(Array3d &x, Array3d &y, Array3d &m);
   void solve_pressure();
   void add_pressure_gradient();
 };

@@ -236,66 +236,220 @@ void Grid::enforce_boundary() {
     }
   }
 }
-void Grid::project() {
-  compute_divergence();
-  form_poisson();
-  form_preconditioner();
-  solve_pressure();
-  add_pressure_gradient();
-}
 
 static inline int ijk_to_index(int i, int j, int k, Array3f &arr) {
   return i + (arr.sx * j) + (arr.sx * arr.sy * k);
 }
 
-void Grid::form_poisson() {}
-void Grid::apply_poisson() {}
+static inline double sqr(double d) { return std::pow(d, 2.0); }
 
-void Grid::form_preconditioner() {}
+void Grid::project(float dt) {
+  compute_divergence();
+  form_poisson(dt);
+  form_preconditioner();
+  solve_pressure();
+  add_pressure_gradient();
+}
 
-void Grid::apply_preconditioner() {}
+void Grid::form_poisson(float dt) {
+  float scale = dt / (density * h * h);
 
-void Grid::solve_pressure() {}
+  for (int i = 1; i < poisson.sx; i++) {
+    for (int j = 1; j < poisson.sy; j++) {
+      for (int k = 1; k < poisson.sz; k++) {
+        if (marker(i, j, k) == FLUID_CELL) {
+          // plus and minus x
+          if (marker(i - 1, j, k) == FLUID_CELL) {
+            poisson(i, j, k)[0] += scale;
+          }
+          if (marker(i + 1, j, k) == FLUID_CELL) {
+            poisson(i, j, k)[0] += scale;
+            poisson(i, j, k)[1] -= scale;
+          } else if (marker(i + 1, j, k) == AIR_CELL) {
+            poisson(i, j, k)[0] += scale;
+          }
+          // plus and minus y
+          if (marker(i, j - 1, k) == FLUID_CELL) {
+            poisson(i, j, k)[0] += scale;
+          }
+          if (marker(i, j + 1, k) == FLUID_CELL) {
+            poisson(i, j, k)[0] += scale;
+            poisson(i, j, k)[2] -= scale;
+          } else if (marker(i, j + 1, k) == AIR_CELL) {
+            poisson(i, j, k)[0] += scale;
+          }
+          // plus and minus z
+          if (marker(i, j, k - 1) == FLUID_CELL) {
+            poisson(i, j, k)[0] += 1.0;
+          }
+          if (marker(i, j, k + 1) == FLUID_CELL) {
+            poisson(i, j, k)[0] += 1.0;
+            poisson(i, j, k)[3] -= 1.0;
+          } else if (marker(i, j, k + 1) == AIR_CELL) {
+            poisson(i, j, k)[0] += 1.0;
+          }
+        }
+      }
+    }
+  }
+}
+void Grid::apply_poisson(Array3d &x, Array3d &y) {
+  y.clear();
+  for (int i = 1; i < poisson.sx - 1; i++) {
+    for (int j = 1; j < poisson.sy - 1; j++) {
+      for (int k = 1; k < poisson.sz - 1; k++) {
+        if (marker(i, j, k) == FLUID_CELL) {
+          y(i, j, k) = poisson(i, j, k)[0] * x(i, j, k) +
+                       poisson(i - 1, j, k)[1] * x(i - 1, j, k) +
+                       poisson(i, j, k)[1] * x(i + 1, j, k) +
+                       poisson(i, j - 1, k)[2] * x(i, j - 1, k) +
+                       poisson(i, j, k)[2] * x(i, j + 1, k) +
+                       poisson(i, j, k - 1)[3] * x(i, j, k - 1) +
+                       poisson(i, j, k)[3] * x(i, j, k + 1);
+        }
+      }
+    }
+  }
+}
+
+void Grid::form_preconditioner() {
+  precon.clear();
+  double error_param = 0.99;
+  double tuning = 0.25;
+  for (int i = 1; i < precon.sx - 1; i++) {
+    for (int j = 1; j < precon.sy - 1; j++) {
+      for (int k = 1; k < precon.sz - 1; k++) {
+        double d =
+            poisson(i, j, k)[0] -
+            sqr(poisson(i - 1, j, k)[1] * precon(i - 1, j, k)) -
+            sqr(poisson(i, j - 1, k)[2] * precon(i, j - 1, k)) -
+            sqr(poisson(i, j, k - 1)[3] * precon(i, j, k - 1)) -
+            error_param *
+                (poisson(i - 1, j, k)[1] *
+                     (poisson(i - 1, j, k)[2] + poisson(i - 1, j, k)[3]) *
+                     sqr(precon(i - 1, j, k)) +
+                 poisson(i, j - 1, k)[2] *
+                     (poisson(i, j - 1, k)[1] + poisson(i, j - 1, k)[3]) *
+                     sqr(precon(i, j - 1, k)) +
+                 poisson(i, j, k - 1)[3] *
+                     (poisson(i, j, k - 1)[1] + poisson(i, j, k - 1)[2]) *
+                     sqr(precon(i, j, k - 1)));
+
+        if (d < tuning * poisson(i, j, k)[0])
+          d = poisson(i, j, k)[0];
+        precon(i, j, k) = 1.0 / std::sqrt(d + 1e-6);
+      }
+    }
+  }
+}
+
+void Grid::apply_preconditioner(Array3d &x, Array3d &y, Array3d &m) {
+  // Lq=r
+  m.clear();
+  for (int i = 1; i < m.sx - 1; i++) {
+    for (int j = 1; j < m.sy - 1; j++) {
+      for (int k = 1; k < m.sz - 1; k++) {
+        if (marker(i, j, k) == FLUID_CELL) {
+          double t =
+              x(i, j, k) -
+              poisson(i - 1, j, k)[1] * precon(i - 1, j, k) * m(i - 1, j, k) -
+              poisson(i, j - 1, k)[2] * precon(i, j - 1, k) * m(i, j - 1, k) -
+              poisson(i, j, k - 1)[3] * precon(i, j, k - 1) * m(i, j, k - 1);
+          m(i, j, k) = t * precon(i, j, k);
+        }
+      }
+    }
+  }
+
+  // L'z=q
+  y.clear();
+  for (int i = x.sx - 2; i > 0; i--) {
+    for (int j = x.sy - 2; j > 0; j--) {
+      for (int k = x.sz - 2; k > 0; k--) {
+        if (marker(i, j, k) == FLUID_CELL) {
+          double t = m(i, j, k) -
+                     poisson(i, j, k)[1] * precon(i, j, k) * y(i + 1, j, k) -
+                     poisson(i, j, k)[2] * precon(i, j, k) * y(i, j + 1, k) -
+                     poisson(i, j, k)[3] * precon(i, j, k) * y(i, j, k + 1);
+          y(i, j, k) = t * precon(i, j, k);
+        }
+      }
+    }
+  }
+}
+
+void Grid::solve_pressure() {
+  int max_its = 1000;
+  double tol = 1e-5 * r.infnorm();
+  pressure.clear();
+  // if no divergence
+  if (r.infnorm() == 0)
+    return;
+  apply_preconditioner(r, z, m);
+  z.copy(s);
+  double sigma = z.dot(r);
+  if (sigma == 0)
+    return;
+  for (int i = 0; i < max_its; i++) {
+    apply_poisson(s, z);
+    double a = sigma / s.dot(z);
+    pressure.inc(a, s);
+    r.inc(-a, z);
+    if (r.infnorm() <= tol) {
+      std::cout << "pressure converged with tol " << r.infnorm() << " and " << i
+                << " iterations" << std::endl;
+      return;
+    }
+    apply_preconditioner(r, z, m);
+    double sigma_n = z.dot(r);
+    double b = sigma_n / sigma;
+    s.scale_inc(b, z);
+    sigma = sigma_n;
+  }
+  std::cout << "error, pressure did not converge || r=" << r.infnorm()
+            << std::endl;
+}
 
 // add the new pressure gradient to the velocity field
 void Grid::add_pressure_gradient() {
+  double scale = 1.0;
   // u
   for (int i = 2; i < u.sx - 2; i++) {
     for (int j = 1; j < u.sy - 1; j++) {
       for (int k = 1; k < u.sz - 1; k++) {
-        if (marker(i - 1, j, k) == SOLID_CELL || marker(i, j, k == SOLID_CELL))
+        if (marker(i - 1, j, k) == SOLID_CELL || marker(i, j, k) == SOLID_CELL)
           continue;
         if (marker(i - 1, j, k) == FLUID_CELL ||
-            marker(i, j, k == FLUID_CELL)) {
-          u(i, j, k) += pressure(i, j, k) - pressure(i - 1, j, k);
+            marker(i, j, k) == FLUID_CELL) {
+          u(i, j, k) += scale * (pressure(i, j, k) - pressure(i - 1, j, k));
         }
       }
     }
   }
 
   // v
-  for (int i = 1; i < u.sx - 1; i++) {
-    for (int j = 2; j < u.sy - 2; j++) {
-      for (int k = 1; k < u.sz - 1; k++) {
-        if (marker(i, j - 1, k) == SOLID_CELL || marker(i, j, k == SOLID_CELL))
+  for (int i = 1; i < v.sx - 1; i++) {
+    for (int j = 2; j < v.sy - 2; j++) {
+      for (int k = 1; k < v.sz - 1; k++) {
+        if (marker(i, j - 1, k) == SOLID_CELL || marker(i, j, k) == SOLID_CELL)
           continue;
         if (marker(i, j - 1, k) == FLUID_CELL ||
-            marker(i, j, k == FLUID_CELL)) {
-          v(i, j, k) += pressure(i, j, k) - pressure(i, j - 1, k);
+            marker(i, j, k) == FLUID_CELL) {
+          v(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j - 1, k));
         }
       }
     }
   }
 
   // w
-  for (int i = 1; i < u.sx - 1; i++) {
-    for (int j = 1; j < u.sy - 1; j++) {
-      for (int k = 2; k < u.sz - 2; k++) {
-        if (marker(i, j, k - 1) == SOLID_CELL || marker(i, j, k == SOLID_CELL))
+  for (int i = 1; i < w.sx - 1; i++) {
+    for (int j = 1; j < w.sy - 1; j++) {
+      for (int k = 2; k < w.sz - 2; k++) {
+        if (marker(i, j, k - 1) == SOLID_CELL || marker(i, j, k) == SOLID_CELL)
           continue;
         if (marker(i, j, k - 1) == FLUID_CELL ||
-            marker(i, j, k == FLUID_CELL)) {
-          w(i, j, k) += pressure(i, j, k) - pressure(i, j, k - 1);
+            marker(i, j, k) == FLUID_CELL) {
+          w(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j, k - 1));
         }
       }
     }

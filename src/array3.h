@@ -44,6 +44,29 @@ template <class T> struct Array3 {
     return n;
   }
 
+  double dot(Array3 &other) {
+    double d = 0;
+    for (int i = 0; i < size; i++)
+      d += data[i] * other.data[i];
+    return d;
+  }
+
+  void inc(double s, Array3 &other) {
+    for (int i = 0; i < size; i++) {
+      data[i] += s * other.data[i];
+    }
+  }
+
+  void scale_inc(double s, Array3 &other) {
+    for (int i = 0; i < size; i++) {
+      data[i] = s * data[i] + other.data[i];
+    }
+  }
+
+  void copy(Array3 &other) const {
+    std::memcpy(other.data, data, other.size * sizeof(T));
+  }
+
   // index (i,j,k cell index), coords (0-1f uv coords)
   T trilerp(glm::ivec3 index, glm::vec3 coords) {
     return (1 - coords.x) * (1 - coords.y) * (1 - coords.z) *
@@ -71,6 +94,8 @@ template <class T> struct Array3 {
   }
 };
 
+typedef Array3<double> Array3d;
 typedef Array3<float> Array3f;
 typedef Array3<int> Array3i;
 typedef Array3<glm::vec3> Array3v3;
+typedef Array3<glm::vec4> Array3v4;

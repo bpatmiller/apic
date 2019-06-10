@@ -157,7 +157,7 @@ void GUI::update() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // step the simulation, copy the new particle data
-  float frame_time = 0.05;
+  float frame_time = 0.01;
   if (keyHeld[GLFW_KEY_P]) {
     simulation.step_frame(frame_time);
     fluid.ib.update(simulation.particles, 0);
@@ -171,7 +171,7 @@ void GUI::update() {
         for (int k = 0; k < simulation.grid.phi.sz; k++) {
           grid_offsets[i + (simulation.grid.phi.sx * j) +
                        (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                      [3] = simulation.grid.r(i, j, k);
+                      [3] = simulation.grid.pressure(i, j, k);
         }
       }
     }
