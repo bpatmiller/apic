@@ -261,8 +261,8 @@ void Simulation::particles_to_grid() {
 // return gradient of weighted field
 glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
                                 glm::vec3 coords) {
-  glm::vec3 c(0.0f);
-  glm::vec3 wv(0.0f);
+  glm::vec3 c(0.0f, 0.0f, 0.0f);
+  glm::vec3 wv(0.0f, 0.0f, 0.0f);
   float w;
 
   w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);

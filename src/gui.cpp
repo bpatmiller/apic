@@ -168,18 +168,32 @@ void GUI::update(bool force) {
   // render the grid
   if (draw_grid) {
     // update grid vao
+    float offs = simulation.grid.h * 0.5;
     for (int i = 0; i < simulation.grid.phi.sx; i++) {
       for (int j = 0; j < simulation.grid.phi.sy; j++) {
         for (int k = 0; k < simulation.grid.phi.sz; k++) {
-          grid_offsets[i + (simulation.grid.phi.sx * j) +
-                       (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                      [3] = simulation.grid.pressure(i, j, k);
+          if (simulation.grid.marker(i, j, k) == FLUID_CELL) {
+            glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
+                                    simulation.grid.h * j + offs,
+                                    simulation.grid.h * k + offs);
+            grid_offsets[i + (simulation.grid.phi.sx * j) +
+                         (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
+                        [3] = glm::length(simulation.trilerp_uvw(p));
+          } else {
+            grid_offsets[i + (simulation.grid.phi.sx * j) +
+                         (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
+                        [3] = 0;
+          }
         }
       }
     }
     grid_vao.ib.update(grid_offsets, 0);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if (draw_particles) {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    } else {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
     grid_program.use();
     grid_program.setMat4("projection", projection_matrix);
     grid_program.setMat4("view", view_matrix);
@@ -202,7 +216,7 @@ void GUI::update(bool force) {
 
           vel_offsets[i + (simulation.grid.phi.sx * j) +
                       (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                     [1] = 2.0f* simulation.trilerp_uvw(p);
+                     [1] = 2.0f * simulation.trilerp_uvw(p);
         }
       }
     }
@@ -218,13 +232,15 @@ void GUI::update(bool force) {
                             simulation.grid.phi.size);
   }
 
-  // render the fluid
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  fluid_program.use();
-  fluid_program.setMat4("projection", projection_matrix);
-  fluid_program.setMat4("view", view_matrix);
-  fluid.bind();
-  glDrawElementsInstanced(GL_TRIANGLES, sphere_indices.size() * 3,
-                          GL_UNSIGNED_INT, sphere_indices.data(),
-                          simulation.particles.size());
+  if (draw_particles) {
+    // render the fluid
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    fluid_program.use();
+    fluid_program.setMat4("projection", projection_matrix);
+    fluid_program.setMat4("view", view_matrix);
+    fluid.bind();
+    glDrawElementsInstanced(GL_TRIANGLES, sphere_indices.size() * 3,
+                            GL_UNSIGNED_INT, sphere_indices.data(),
+                            simulation.particles.size());
+  }
 }

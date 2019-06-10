@@ -22,6 +22,8 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
     gui->draw_grid = !gui->draw_grid;
   } else if (key == GLFW_KEY_V && action == GLFW_RELEASE) {
     gui->draw_velocity = !gui->draw_velocity;
+  } else if (key == GLFW_KEY_B && action == GLFW_RELEASE) {
+    gui->draw_particles = !gui->draw_particles;
   } else if (key == GLFW_KEY_1 && action == GLFW_RELEASE) {
     gui->simulation.mode = PIC_MODE;
     std::cout << "PIC mode" << std::endl;
@@ -81,7 +83,7 @@ int main(int argc, char *argv[]) {
   glfwSetCursorPosCallback(window, MousePosCallback);
   glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
-  int grid_res = 15;
+  int grid_res = 18;
   gui.init(2.0f, grid_res, grid_res, grid_res);
   while (!glfwWindowShouldClose(window)) {
     gui.update();

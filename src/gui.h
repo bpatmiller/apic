@@ -58,6 +58,7 @@ public:
   std::vector<glm::uvec3> vel_indices;
   std::vector<std::array<glm::vec3, 2>> vel_offsets;
   bool draw_velocity = true;
+  bool draw_particles = true;
 
   // helper functions
   void create_sphere(float Radius, std::vector<glm::vec3> &s_vertices);
