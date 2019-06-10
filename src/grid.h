@@ -17,14 +17,15 @@ public:
   float h;           // size of each cell
   float density = 8; // particles per cell
 
-  Array3f u, v, w;  // velocities
-  Array3f count;    // keep track of how many particles
-                    // are near each grid node
-                    // (normalizing velocity field)
-  Array3i marker;   // air, fluid, solid
-  Array3f phi;      // signed distances
-  Array3d pressure; // self explanatory
-  Array3f rho;      // density
+  Array3f u, v, w;    // velocities
+  Array3f du, dv, dw; // saved velocities for flip
+  Array3f count;      // keep track of how many particles
+                      // are near each grid node
+                      // (normalizing velocity field)
+  Array3i marker;     // air, fluid, solid
+  Array3f phi;        // signed distances
+  Array3d pressure;   // self explanatory
+  Array3f rho;        // density
 
   Array3v4 poisson; // Adiag, Ax, Ay, Az
   Array3d precon;   //
@@ -53,6 +54,9 @@ public:
     u.init(nx + 1, ny, nz);
     v.init(nx, ny + 1, nz);
     w.init(nx, ny, nz + 1);
+    du.init(nx + 1, ny, nz);
+    dv.init(nx, ny + 1, nz);
+    dw.init(nx, ny, nz + 1);
     count.init(nx + 1, ny + 1, nz + 1);
     pressure.init(nx, ny, nz);
     rho.init(nx, ny, nz);
@@ -88,5 +92,5 @@ public:
   void form_preconditioner();
   void apply_preconditioner(Array3d &x, Array3d &y, Array3d &m);
   void solve_pressure();
-  void add_pressure_gradient();
+  void add_pressure_gradient(float dt);
 };

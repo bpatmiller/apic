@@ -18,6 +18,7 @@ public:
 
   void add_particle_box();
   void particles_to_grid();
+  void save_velocities();
   void grid_to_particles();
   void advect(float dt);
   void advance(float dt);
@@ -30,4 +31,5 @@ public:
   void grid_add_quantities(Array3f &arr, float q, glm::ivec3 index,
                            glm::vec3 coords);
   glm::vec3 trilerp_uvw(glm::vec3 p);
+  glm::vec3 trilerp_dudvdw(glm::vec3 p);
 };

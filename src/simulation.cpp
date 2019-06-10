@@ -8,6 +8,8 @@
 #define V_OFFSET glm::vec3(0, 0.5f, 0)
 #define W_OFFSET glm::vec3(0, 0, 0.5f)
 
+#define FLIP_MODE 0
+
 #define EPS 0.001
 
 // initialize "dam break" scenario
@@ -31,6 +33,12 @@ void Simulation::add_particle_box() {
   }
 }
 
+void Simulation::save_velocities() {
+  grid.u.copy(grid.du);
+  grid.v.copy(grid.dv);
+  grid.w.copy(grid.dw);
+}
+
 // given a position, return the trilinear interpolation
 // of the velocity field at that position
 glm::vec3 Simulation::trilerp_uvw(glm::vec3 p) {
@@ -46,6 +54,23 @@ glm::vec3 Simulation::trilerp_uvw(glm::vec3 p) {
   // w
   position_to_grid(p, W_OFFSET, index, coords);
   result.z = grid.w.trilerp(index, coords);
+
+  return result;
+}
+
+glm::vec3 Simulation::trilerp_dudvdw(glm::vec3 p) {
+  glm::ivec3 index;
+  glm::vec3 coords;
+  glm::vec3 result;
+  // u
+  position_to_grid(p, U_OFFSET, index, coords);
+  result.x = grid.du.trilerp(index, coords);
+  // v
+  position_to_grid(p, V_OFFSET, index, coords);
+  result.y = grid.dv.trilerp(index, coords);
+  // w
+  position_to_grid(p, W_OFFSET, index, coords);
+  result.z = grid.dw.trilerp(index, coords);
 
   return result;
 }
@@ -191,9 +216,25 @@ void Simulation::particles_to_grid() {
 }
 
 void Simulation::grid_to_particles() {
+  if (FLIP_MODE) {
+    for (int i = 0; i < grid.u.size; i++) {
+      grid.du.data[i] = grid.u.data[i] - grid.du.data[i];
+    }
+    for (int i = 0; i < grid.v.size; i++) {
+      grid.dv.data[i] = grid.v.data[i] - grid.dv.data[i];
+    }
+    for (int i = 0; i < grid.w.size; i++) {
+      grid.dw.data[i] = grid.w.data[i] - grid.dw.data[i];
+    }
+  }
+
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
-    p.velocity = trilerp_uvw(p.position);
+    if (FLIP_MODE) {
+      p.velocity += trilerp_dudvdw(p.position);
+    } else {
+      p.velocity = trilerp_uvw(p.position);
+    }
   }
 }
 
@@ -282,6 +323,7 @@ void Simulation::mark_cells() {
 
 void Simulation::advance(float dt) {
   particles_to_grid();     // done
+  save_velocities();       // done
   grid.add_gravity(dt);    // done
   mark_cells();            // done
   grid.compute_phi();      // done

@@ -248,12 +248,12 @@ void Grid::project(float dt) {
   form_poisson(dt);
   form_preconditioner();
   solve_pressure();
-  add_pressure_gradient();
+  add_pressure_gradient(dt);
 }
 
 void Grid::form_poisson(float dt) {
   float scale = dt / (density * h * h);
-
+  // float scale = 1.0;
   for (int i = 1; i < poisson.sx; i++) {
     for (int j = 1; j < poisson.sy; j++) {
       for (int k = 1; k < poisson.sz; k++) {
@@ -337,7 +337,9 @@ void Grid::form_preconditioner() {
 
         if (d < tuning * poisson(i, j, k)[0])
           d = poisson(i, j, k)[0];
-        precon(i, j, k) = 1.0 / std::sqrt(d + 1e-6);
+        if (d == 0)
+          d = 1e-6;
+        precon(i, j, k) = 1.0 / std::sqrt(d);
       }
     }
   }
@@ -379,8 +381,8 @@ void Grid::apply_preconditioner(Array3d &x, Array3d &y, Array3d &m) {
 }
 
 void Grid::solve_pressure() {
-  int max_its = 1000;
-  double tol = 1e-5 * r.infnorm();
+  int max_its = 500;
+  double tol = 1e-7 * r.infnorm();
   pressure.clear();
   // if no divergence
   if (r.infnorm() == 0)
@@ -396,8 +398,9 @@ void Grid::solve_pressure() {
     pressure.inc(a, s);
     r.inc(-a, z);
     if (r.infnorm() <= tol) {
-      std::cout << "pressure converged with tol " << r.infnorm() << " and " << i
-                << " iterations" << std::endl;
+      // std::cout << "pressure converged with tol " << r.infnorm() << " and "
+      // << i
+      //           << " iterations" << std::endl;
       return;
     }
     apply_preconditioner(r, z, m);
@@ -411,8 +414,8 @@ void Grid::solve_pressure() {
 }
 
 // add the new pressure gradient to the velocity field
-void Grid::add_pressure_gradient() {
-  double scale = 1.0;
+void Grid::add_pressure_gradient(float dt) {
+  double scale = -dt / (density * h);
   // u
   for (int i = 2; i < u.sx - 2; i++) {
     for (int j = 1; j < u.sy - 1; j++) {
@@ -581,13 +584,14 @@ void Grid::solve_phi(float p, float q, float r, float &c) {
 }
 
 void Grid::compute_divergence() {
+  double scale = -1.0 / h;
   r.clear();
   for (int i = 0; i < r.sx; i++) {
     for (int j = 0; j < r.sy; j++) {
       for (int k = 0; k < r.sz; k++) {
         if (marker(i, j, k) == FLUID_CELL)
-          r(i, j, k) = u(i + 1, j, k) - u(i, j, k) + v(i, j + 1, k) -
-                       v(i, j, k) + w(i, j, k + 1) - w(i, j, k);
+          r(i, j, k) = scale * (u(i + 1, j, k) - u(i, j, k) + v(i, j + 1, k) -
+                                v(i, j, k) + w(i, j, k + 1) - w(i, j, k));
       }
     }
   }
