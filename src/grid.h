@@ -12,9 +12,9 @@ class Grid {
 public:
   float gravity = -9.8;
 
-  float lx, ly, lz;  // total length of grid
-  float nx, ny, nz;  // number of cells per dimension
-  float h;           // size of each cell
+  float lx, ly, lz;     // total length of grid
+  float nx, ny, nz;     // number of cells per dimension
+  float h;              // size of each cell
   float density = 1.0f; //
 
   Array3f u, v, w;    // velocities

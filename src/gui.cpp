@@ -202,7 +202,7 @@ void GUI::update(bool force) {
 
           vel_offsets[i + (simulation.grid.phi.sx * j) +
                       (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                     [1] =  simulation.trilerp_uvw(p);
+                     [1] = simulation.trilerp_uvw(p);
         }
       }
     }

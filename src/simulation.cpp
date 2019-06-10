@@ -26,6 +26,10 @@ void Simulation::add_particle_box() {
           float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
           particles.emplace_back(Particle(glm::vec3(
               base_x + jitter_x, base_y + jitter_y, base_z + jitter_z)));
+          // APIC vectors
+          cx.emplace_back(glm::vec3(0));
+          cy.emplace_back(glm::vec3(0));
+          cz.emplace_back(glm::vec3(0));
         }
       }
     }
@@ -143,26 +147,66 @@ void Simulation::grid_add_quantities(Array3f &arr, float q, glm::ivec3 index,
   grid.count(index.x + 1, index.y + 1, index.z + 1) += w;
 }
 
+template <class T>
+void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
+                            glm::vec3 coords) {
+  float w;
+  float coef;
+
+  // done
+  w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);
+  coef = glm::dot(c, glm::vec3(-coords.x, -coords.y, -coords.z) * grid.h);
+  accum(index.x, index.y, index.z) += w * coef;
+
+  // done
+  w = (1 - coords.x) * (1 - coords.y) * (coords.z);
+  coef = glm::dot(c, glm::vec3(-coords.x, -coords.y, 1 - coords.z) * grid.h);
+  accum(index.x, index.y, index.z + 1) += w * coef;
+
+  // done
+  w = (1 - coords.x) * (coords.y) * (1 - coords.z);
+  coef = glm::dot(c, glm::vec3(-coords.x, 1 - coords.y, -coords.z) * grid.h);
+  accum(index.x, index.y + 1, index.z) += w * coef;
+
+  // done
+  w = (1 - coords.x) * (coords.y) * (coords.z);
+  coef = glm::dot(c, glm::vec3(-coords.x, 1 - coords.y, 1 - coords.z) * grid.h);
+  accum(index.x, index.y + 1, index.z + 1) += w * coef;
+
+  // done
+  w = (coords.x) * (1 - coords.y) * (1 - coords.z);
+  coef = glm::dot(c, glm::vec3(1 - coords.x, -coords.y, -coords.z) * grid.h);
+  accum(index.x + 1, index.y, index.z) += w * coef;
+
+  //
+  w = (coords.x) * (1 - coords.y) * (coords.z);
+  coef = glm::dot(c, glm::vec3(1 - coords.x, -coords.y, 1 - coords.z) * grid.h);
+  accum(index.x + 1, index.y, index.z + 1) += w * coef;
+
+  w = (coords.x) * (coords.y) * (1 - coords.z);
+  coef = glm::dot(c, glm::vec3(1 - coords.x, 1 - coords.y, -coords.z) * grid.h);
+  accum(index.x + 1, index.y + 1, index.z) += w * coef;
+
+  w = (coords.x) * (coords.y) * (coords.z);
+  coef =
+      glm::dot(c, glm::vec3(1 - coords.x, 1 - coords.y, 1 - coords.z) * grid.h);
+  accum(index.x + 1, index.y + 1, index.z + 1) += w * coef;
+}
+
 // for each particle, trilinearly interpolate velocity
 // to all grid points nearby
 void Simulation::particles_to_grid() {
-  // rho
-  grid.rho.clear();
-  for (auto p : particles) {
-    glm::ivec3 index;
-    glm::vec3 coords;
-    position_to_grid(p.position, glm::vec3(0, 0, 0), index, coords);
-    grid_add_quantities(grid.rho, 1.0f, index, coords);
-  }
-
   // u
   grid.u.clear();
   grid.count.clear();
-  for (auto p : particles) {
+  for (uint i = 0; i < particles.size(); i++) {
+    Particle &p = particles[i];
     glm::ivec3 index;
     glm::vec3 coords;
     position_to_grid(p.position, U_OFFSET, index, coords);
     grid_add_quantities(grid.u, p.velocity.x, index, coords);
+    if (mode == APIC_MODE)
+      affine_set(grid.u, cx[i], index, coords);
   }
   // average velocities
   for (int i = 0; i < grid.u.sx; i++) {
@@ -177,11 +221,14 @@ void Simulation::particles_to_grid() {
   // v
   grid.v.clear();
   grid.count.clear();
-  for (auto p : particles) {
+  for (uint i = 0; i < particles.size(); i++) {
+    Particle &p = particles[i];
     glm::ivec3 index;
     glm::vec3 coords;
     position_to_grid(p.position, V_OFFSET, index, coords);
     grid_add_quantities(grid.v, p.velocity.y, index, coords);
+    if (mode == APIC_MODE)
+      affine_set(grid.v, cy[i], index, coords);
   }
   // average velocities
   for (int i = 0; i < grid.v.sx; i++) {
@@ -197,11 +244,14 @@ void Simulation::particles_to_grid() {
   // w
   grid.w.clear();
   grid.count.clear();
-  for (auto p : particles) {
+  for (uint i = 0; i < particles.size(); i++) {
+    Particle &p = particles[i];
     glm::ivec3 index;
     glm::vec3 coords;
     position_to_grid(p.position, W_OFFSET, index, coords);
     grid_add_quantities(grid.w, p.velocity.z, index, coords);
+    if (mode == APIC_MODE)
+      affine_set(grid.w, cz[i], index, coords);
   }
   // average velocities
   for (int i = 0; i < grid.w.sx; i++) {
@@ -212,6 +262,48 @@ void Simulation::particles_to_grid() {
       }
     }
   }
+}
+
+// return gradient of weighted field
+glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
+                                glm::vec3 coords) {
+  glm::vec3 c(0.0f);
+  glm::vec3 wv(0.0f);
+  float w;
+
+  w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);
+  wv = glm::vec3(-coords.x, -coords.y, -coords.z) * grid.h;
+  c += w * wv * field(index.x, index.y, index.z);
+
+  w = (1 - coords.x) * (1 - coords.y) * (coords.z);
+  wv = glm::vec3(-coords.x, -coords.y, 1 - coords.z) * grid.h;
+  c += w * wv * field(index.x, index.y, index.z + 1);
+
+  w = (1 - coords.x) * (coords.y) * (1 - coords.z);
+  wv = glm::vec3(-coords.x, 1 - coords.y, -coords.z) * grid.h;
+  c += w * wv * field(index.x, index.y + 1, index.z);
+
+  w = (1 - coords.x) * (coords.y) * (coords.z);
+  wv = glm::vec3(-coords.x, 1 - coords.y, 1 - coords.z) * grid.h;
+  c += w * wv * field(index.x, index.y + 1, index.z + 1);
+
+  w = (coords.x) * (1 - coords.y) * (1 - coords.z);
+  wv = glm::vec3(1 - coords.x, -coords.y, -coords.z) * grid.h;
+  c += w * wv * field(index.x + 1, index.y, index.z);
+
+  w = (coords.x) * (1 - coords.y) * (coords.z);
+  wv = glm::vec3(1 - coords.x, -coords.y, 1 - coords.z) * grid.h;
+  c += w * wv * field(index.x + 1, index.y, index.z + 1);
+
+  w = (coords.x) * (coords.y) * (1 - coords.z);
+  wv = glm::vec3(1 - coords.x, 1 - coords.y, -coords.z) * grid.h;
+  c += w * wv * field(index.x + 1, index.y + 1, index.z);
+
+  w = (coords.x) * (coords.y) * (coords.z);
+  wv = glm::vec3(1 - coords.x, 1 - coords.y, 1 - coords.z) * grid.h;
+  c += w * wv * field(index.x + 1, index.y + 1, index.z + 1);
+
+  return c;
 }
 
 void Simulation::grid_to_particles() {
@@ -228,6 +320,9 @@ void Simulation::grid_to_particles() {
     }
   }
 
+  glm::ivec3 index;
+  glm::vec3 coords;
+
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
     if (mode == PIC_FLIP_MODE) {
@@ -235,10 +330,17 @@ void Simulation::grid_to_particles() {
           (flip_blend * trilerp_uvw(p.position)) +
           (1.0f - flip_blend) * (p.velocity + trilerp_dudvdw(p.position));
 
-    } else if (mode == PIC_MODE) {
+    } else {
       p.velocity = trilerp_uvw(p.position);
-    } else if (mode == APIC_MODE) {
-      // TODO
+      if (mode == APIC_MODE) {
+        // transfer C to particles
+        position_to_grid(p.position, U_OFFSET, index, coords);
+        cx[i] = compute_C(grid.u, index, coords);
+        position_to_grid(p.position, V_OFFSET, index, coords);
+        cy[i] = compute_C(grid.v, index, coords);
+        position_to_grid(p.position, W_OFFSET, index, coords);
+        cz[i] = compute_C(grid.w, index, coords);
+      }
     }
   }
 }

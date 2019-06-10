@@ -13,8 +13,12 @@ class Simulation {
 public:
   Grid grid;
   std::vector<Particle> particles;
-  int mode = 1;
-  float flip_blend = 0.95f; // 0.05 flip, 0.95 pic
+  std::vector<glm::vec3> cx;
+  std::vector<glm::vec3> cy;
+  std::vector<glm::vec3> cz;
+
+  int mode = APIC_MODE;
+  float flip_blend = 0.90f;
 
   Simulation(){};
 
@@ -43,4 +47,9 @@ public:
                            glm::vec3 coords);
   glm::vec3 trilerp_uvw(glm::vec3 p);
   glm::vec3 trilerp_dudvdw(glm::vec3 p);
+
+  // APIC functions
+  template <class T>
+  void affine_set(T &accum, glm::vec3 c, glm::ivec3 index, glm::vec3 coords);
+  glm::vec3 compute_C(Array3f &field, glm::ivec3 index, glm::vec3 coords);
 };

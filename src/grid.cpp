@@ -27,7 +27,7 @@ void Grid::add_gravity(float dt) {
 }
 
 void Grid::extend_velocity() {
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 8; i++) {
     sweep_velocity();
   }
 }
@@ -113,8 +113,8 @@ void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {
           if (dq < 0)
             continue;
           // avg z-dir phi chhttps://www.youtube.com/watch?v=HcO-NPtj5BIange
-          float dr = 0.5 * (phi(i, j - 1, k) + phi(i, j, k) -
-                            phi(i, j - 1, k - dk) - phi(i, j, k - dk));
+          float dr = 0.5 * (phi(i-1, j , k) + phi(i, j, k) -
+                            phi(i-1, j , k - dk) - phi(i, j, k - dk));
           if (dr < 0)
             continue;
 
@@ -154,8 +154,8 @@ void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {
           if (dp < 0)
             continue;
           // avg z-dir phi change
-          float dr = 0.5 * (phi(i, j - 1, k) + phi(i, j, k) -
-                            phi(i, j - 1, k - dk) - phi(i, j, k - dk));
+          float dr = 0.5 * (phi(i-1, j - 1, k) + phi(i, j, k) -
+                            phi(i-1, j - 1, k - dk) - phi(i, j, k - dk));
           if (dr < 0)
             continue;
 
@@ -191,13 +191,13 @@ void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {
           if (dr < 0)
             continue;
           // avg y-dir phi change
-          float dq = 0.5 * (phi(i - 1, j, k) + phi(i, j, k) -
-                            phi(i - 1, j - dj, k) - phi(i, j - dj, k));
+          float dq = 0.5 * (phi(i, j-1, k) + phi(i, j, k) -
+                            phi(i, j - dj, k-dk) - phi(i, j - 1, k-dk));
           if (dq < 0)
             continue;
           // avg x-dir phi change
-          float dp = 0.5 * (phi(i, j - 1, k) + phi(i, j, k) -
-                            phi(i - di, j - 1, k) - phi(i - di, j, k));
+          float dp = 0.5 * (phi(i-1, j , k) + phi(i, j, k) -
+                            phi(i - 1, j - 1, k-dk) - phi(i - 1, j, k-dk));
           if (dp < 0)
             continue;
 
@@ -223,22 +223,31 @@ void Grid::enforce_boundary() {
   // top and bottom
   for (int i = 0; i < v.sx; i++) {
     for (int k = 0; k < v.sz; k++) {
+      v(i,0,k) = 0;
       v(i, 1, k) = 0;
       v(i, v.sy - 1, k) = 0;
+      v(i, v.sy - 2, k) = 0;
+
     }
   }
   // left and right
   for (int j = 0; j < u.sy; j++) {
     for (int k = 0; k < u.sz; k++) {
+      u(0,j,k)=0;
       u(1, j, k) = 0;
       u(u.sx - 1, j, k) = 0;
+      u(u.sx - 2, j, k) = 0;
+
     }
   }
   // front and back
   for (int i = 0; i < w.sx; i++) {
     for (int j = 0; j < w.sy; j++) {
+      w(i,j,0)=0;
       w(i, j, 1) = 0;
       w(i, j, w.sz - 1) = 0;
+        w(i, j, w.sz - 2) = 0;
+
     }
   }
 }
@@ -253,7 +262,7 @@ void Grid::project(float dt) {
 
 void Grid::form_poisson(float dt) {
   poisson.clear();
-  double scale = dt / (density * h * h);
+  double scale = 1.0;//dt / (density * h * h);
   // float scale = 1.0;
   for (int i = 1; i < poisson.sx; i++) {
     for (int j = 1; j < poisson.sy; j++) {
@@ -416,8 +425,7 @@ void Grid::solve_pressure() {
 
 // add the new pressure gradient to the velocity field
 void Grid::add_pressure_gradient(float dt) {
-  lap_pres.clear();
-  double scale = - 1.3 * dt / (density * h);
+  double scale = 1.0;//-dt / (density * h);
   // u
   for (int i = 2; i < u.sx - 2; i++) {
     for (int j = 1; j < u.sy - 1; j++) {
@@ -427,8 +435,7 @@ void Grid::add_pressure_gradient(float dt) {
         if (marker(i - 1, j, k) == FLUID_CELL ||
             marker(i, j, k) == FLUID_CELL) {
           u(i, j, k) += scale * (pressure(i, j, k) - pressure(i - 1, j, k));
-          lap_pres(i, j, k)[0] =
-              scale * (pressure(i, j, k) - pressure(i - 1, j, k));
+
         }
       }
     }
@@ -443,8 +450,7 @@ void Grid::add_pressure_gradient(float dt) {
         if (marker(i, j - 1, k) == FLUID_CELL ||
             marker(i, j, k) == FLUID_CELL) {
           v(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j - 1, k));
-          lap_pres(i, j, k)[1] =
-              scale * (pressure(i, j, k) - pressure(i, j - 1, k));
+
         }
       }
     }
@@ -459,8 +465,7 @@ void Grid::add_pressure_gradient(float dt) {
         if (marker(i, j, k - 1) == FLUID_CELL ||
             marker(i, j, k) == FLUID_CELL) {
           w(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j, k - 1));
-          lap_pres(i, j, k)[2] =
-              scale * (pressure(i, j, k) - pressure(i, j, k - 1));
+
         }
       }
     }
@@ -482,7 +487,7 @@ void Grid::compute_phi() {
     }
   }
 
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 8; i++) {
     sweep_phi();
   }
 }
@@ -592,7 +597,7 @@ void Grid::solve_phi(float p, float q, float r, float &c) {
 }
 
 void Grid::compute_divergence() {
-  double scale = -1.0 / h;
+  double scale = 1.0;//-1.0 / h;
   r.clear();
   for (int i = 0; i < r.sx; i++) {
     for (int j = 0; j < r.sy; j++) {
