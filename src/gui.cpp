@@ -171,7 +171,7 @@ void GUI::update() {
         for (int k = 0; k < simulation.grid.phi.sz; k++) {
           grid_offsets[i + (simulation.grid.phi.sx * j) +
                        (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                      [3] = simulation.grid.pressure(i, j, k);
+                      [3] = simulation.grid.r(i, j, k);
         }
       }
     }

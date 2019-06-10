@@ -20,7 +20,7 @@ void main() {
   if (p == 0) {
     fragment_color = vec4(0.1);
   } else {
-    fragment_color = vec4(abs(p * 1000.0), 0.2, 0.2, 0.8);
+    fragment_color = vec4(abs(p * 10000.0), 0.2, 0.2, 0.8);
   }
 
   // // type

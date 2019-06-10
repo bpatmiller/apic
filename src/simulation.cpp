@@ -288,8 +288,8 @@ void Simulation::advance(float dt) {
   // grid.extend_velocity();  // done
   grid.enforce_boundary(); // done
   // grid.project();          // todo
-  // grid.extend_velocity(); // done
-  grid_to_particles(); // done
+  grid.extend_velocity(); // done
+  grid_to_particles();    // done
   for (int i = 0; i < 5; i++)
     advect(0.2 * dt); // done
 }

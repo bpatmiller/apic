@@ -72,7 +72,7 @@ void Grid::sweep_velocity() {
   sweep_v(v.sx - 2, 0, 1, v.sy - 1, v.sz - 2, 0);
   sweep_v(v.sx - 2, 0, v.sy - 2, 0, 1, v.sz - 1);
   sweep_v(v.sx - 2, 0, v.sy - 2, 0, v.sz - 2, 0);
-  // // set boundary cells
+  // set boundary cells
   sweep_velocity_boundary(v);
 
   // W --------------------------------
@@ -92,7 +92,7 @@ void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {
   int dj = (j0 < j1) ? 1 : -1;
   int dk = (k0 < k1) ? 1 : -1;
 
-  float w;
+  float weight;
 
   for (int i = i0; i != i1; i += di) {
     for (int j = j0; j != j1; j += dj) {
@@ -114,13 +114,14 @@ void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {
 
           // weighted sum of other velocities
           if (dp + dq + dr == 0) {
-            w = 1.0f / 3.0f;
-            v(i, j, k) =
-                w * (v(i - di, j, k) + v(i, j - dj, k) + v(i, j, k - dk));
+            weight = 1.0f / 3.0f;
+            u(i, j, k) =
+                weight * (u(i - di, j, k) + u(i, j - dj, k) + u(i, j, k - dk));
           } else {
-            w = 1.0f / (dp + dq + dr);
-            v(i, j, k) = dp * w * v(i - di, j, k) + dq * w * v(i, j - dj, k) +
-                         dr * w * v(i, j, k - dk);
+            weight = 1.0f / (dp + dq + dr);
+            u(i, j, k) = dp * weight * u(i - di, j, k) +
+                         dq * weight * u(i, j - dj, k) +
+                         dr * weight * u(i, j, k - dk);
           }
         }
       }
@@ -132,7 +133,7 @@ void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {
   int dj = (j0 < j1) ? 1 : -1;
   int dk = (k0 < k1) ? 1 : -1;
 
-  float w;
+  float weight;
 
   for (int i = i0; i != i1; i += di) {
     for (int j = j0; j != j1; j += dj) {
@@ -154,13 +155,14 @@ void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {
 
           // weighted sum of other velocities
           if (dp + dq + dr == 0) {
-            w = 1.0f / 3.0f;
+            weight = 1.0f / 3.0f;
             v(i, j, k) =
-                w * (v(i - di, j, k) + v(i, j - dj, k) + v(i, j, k - dk));
+                weight * (v(i - di, j, k) + v(i, j - dj, k) + v(i, j, k - dk));
           } else {
-            w = 1.0f / (dp + dq + dr);
-            v(i, j, k) = dp * w * v(i - di, j, k) + dq * w * v(i, j - dj, k) +
-                         dr * w * v(i, j, k - dk);
+            weight = 1.0f / (dp + dq + dr);
+            v(i, j, k) = dp * weight * v(i - di, j, k) +
+                         dq * weight * v(i, j - dj, k) +
+                         dr * weight * v(i, j, k - dk);
           }
         }
       }
@@ -173,7 +175,7 @@ void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {
   int dj = (j0 < j1) ? 1 : -1;
   int dk = (k0 < k1) ? 1 : -1;
 
-  float w;
+  float weight;
 
   for (int i = i0; i != i1; i += di) {
     for (int j = j0; j != j1; j += dj) {
@@ -195,13 +197,14 @@ void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {
 
           // weighted sum of other velocities
           if (dp + dq + dr == 0) {
-            w = 1.0f / 3.0f;
-            v(i, j, k) =
-                w * (v(i - di, j, k) + v(i, j - dj, k) + v(i, j, k - dk));
+            weight = 1.0f / 3.0f;
+            w(i, j, k) =
+                weight * (w(i - di, j, k) + w(i, j - dj, k) + w(i, j, k - dk));
           } else {
-            w = 1.0f / (dp + dq + dr);
-            v(i, j, k) = dp * w * v(i - di, j, k) + dq * w * v(i, j - dj, k) +
-                         dr * w * v(i, j, k - dk);
+            weight = 1.0f / (dp + dq + dr);
+            w(i, j, k) = dp * weight * w(i - di, j, k) +
+                         dq * weight * w(i, j - dj, k) +
+                         dr * weight * w(i, j, k - dk);
           }
         }
       }
