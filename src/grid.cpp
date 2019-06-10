@@ -252,6 +252,7 @@ void Grid::project(float dt) {
 }
 
 void Grid::form_poisson(float dt) {
+  poisson.clear();
   float scale = dt / (density * h * h);
   // float scale = 1.0;
   for (int i = 1; i < poisson.sx; i++) {
@@ -314,7 +315,7 @@ void Grid::apply_poisson(Array3d &x, Array3d &y) {
 
 void Grid::form_preconditioner() {
   precon.clear();
-  double error_param = 0.99;
+  double error_param = 0.97;
   double tuning = 0.25;
   for (int i = 1; i < precon.sx - 1; i++) {
     for (int j = 1; j < precon.sy - 1; j++) {
@@ -425,6 +426,8 @@ void Grid::add_pressure_gradient(float dt) {
         if (marker(i - 1, j, k) == FLUID_CELL ||
             marker(i, j, k) == FLUID_CELL) {
           u(i, j, k) += scale * (pressure(i, j, k) - pressure(i - 1, j, k));
+          lap_pres(i, j, k)[0] =
+              scale * (pressure(i, j, k) - pressure(i - 1, j, k));
         }
       }
     }
@@ -439,6 +442,8 @@ void Grid::add_pressure_gradient(float dt) {
         if (marker(i, j - 1, k) == FLUID_CELL ||
             marker(i, j, k) == FLUID_CELL) {
           v(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j - 1, k));
+          lap_pres(i, j, k)[1] =
+              scale * (pressure(i, j, k) - pressure(i, j - 1, k));
         }
       }
     }
@@ -453,6 +458,8 @@ void Grid::add_pressure_gradient(float dt) {
         if (marker(i, j, k - 1) == FLUID_CELL ||
             marker(i, j, k) == FLUID_CELL) {
           w(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j, k - 1));
+          lap_pres(i, j, k)[2] =
+              scale * (pressure(i, j, k) - pressure(i, j, k - 1));
         }
       }
     }
@@ -595,4 +602,5 @@ void Grid::compute_divergence() {
       }
     }
   }
+  r.copy(rc);
 }

@@ -15,7 +15,7 @@ public:
   float lx, ly, lz;  // total length of grid
   float nx, ny, nz;  // number of cells per dimension
   float h;           // size of each cell
-  float density = 8; // particles per cell
+  float density = 8; //
 
   Array3f u, v, w;    // velocities
   Array3f du, dv, dw; // saved velocities for flip
@@ -27,10 +27,12 @@ public:
   Array3d pressure;   // self explanatory
   Array3f rho;        // density
 
-  Array3v4 poisson; // Adiag, Ax, Ay, Az
-  Array3d precon;   //
-  Array3d m;        //
-  Array3d r, z, s;  //
+  Array3v3 lap_pres;
+
+  Array3v4 poisson;    // Adiag, Ax, Ay, Az
+  Array3d precon;      //
+  Array3d m;           //
+  Array3d r, rc, z, s; //
 
   // used for pressure solve
   Eigen::SparseMatrix<double> A;
@@ -61,6 +63,8 @@ public:
     pressure.init(nx, ny, nz);
     rho.init(nx, ny, nz);
 
+    lap_pres.init(nx, ny, nz);
+
     marker.init(nx, ny, nz);
     phi.init(nx, ny, nz);
 
@@ -68,6 +72,7 @@ public:
     precon.init(nx, ny, nz);
     m.init(nx, ny, nz);
     r.init(nx, ny, nz);
+    rc.init(nx, ny, nz);
     z.init(nx, ny, nz);
     s.init(nx, ny, nz);
   }

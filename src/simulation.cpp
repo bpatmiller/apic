@@ -241,12 +241,12 @@ void Simulation::grid_to_particles() {
 void Simulation::advect(float dt) {
   glm::vec3 mid, gu;
   // boundaries
-  float xmin = 1.001 * grid.h;
-  float ymin = 1.001 * grid.h;
-  float zmin = 1.001 * grid.h;
-  float xmax = grid.lx - 1.001 * grid.h;
-  float ymax = grid.ly - 1.001 * grid.h;
-  float zmax = grid.lz - 1.001 * grid.h;
+  float xmin = 1.01 * grid.h;
+  float ymin = 1.01 * grid.h;
+  float zmin = 1.01 * grid.h;
+  float xmax = grid.lx - 1.01 * grid.h;
+  float ymax = grid.ly - 1.01 * grid.h;
+  float zmax = grid.lz - 1.01 * grid.h;
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
     // first stage of RK2
@@ -258,9 +258,9 @@ void Simulation::advect(float dt) {
     // second stage
     gu = trilerp_uvw(mid);
     p.position += dt * gu;
-    p.position.x = glm::clamp(mid.x, xmin, xmax);
-    p.position.y = glm::clamp(mid.y, ymin, ymax);
-    p.position.z = glm::clamp(mid.z, zmin, zmax);
+    p.position.x = glm::clamp(p.position.x, xmin, xmax);
+    p.position.y = glm::clamp(p.position.y, ymin, ymax);
+    p.position.z = glm::clamp(p.position.z, zmin, zmax);
   }
 }
 
@@ -322,18 +322,18 @@ void Simulation::mark_cells() {
 }
 
 void Simulation::advance(float dt) {
-  particles_to_grid();     // done
-  save_velocities();       // done
-  grid.add_gravity(dt);    // done
-  mark_cells();            // done
-  grid.compute_phi();      // done
-  grid.extend_velocity();  // done
-  grid.enforce_boundary(); // done
-  grid.project(dt);        // todo
-  grid.extend_velocity();  // done
-  grid_to_particles();     // done
   for (int i = 0; i < 5; i++)
-    advect(0.2 * dt); // done
+    advect(0.2 * dt);
+  particles_to_grid();
+  save_velocities();
+  grid.add_gravity(dt);
+  mark_cells();
+  grid.compute_phi();
+  grid.extend_velocity();
+  grid.enforce_boundary();
+  grid.project(dt);
+  grid.extend_velocity();
+  grid_to_particles();
 }
 
 void Simulation::step_frame(float time) {

@@ -21,7 +21,7 @@ void main() {
     //    fragment_color = vec4(0.8,0.8,0.8,0.05);
     fragment_color = vec4(0);
   } else {
-    fragment_color = vec4(1.0 + 5.0 * p, 0.2, 0.2, 0.9);
+    fragment_color = vec4(sin(p), 0.2, 0.2, 0.9);
   }
 
   // // type
