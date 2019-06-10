@@ -122,6 +122,15 @@ void Simulation::grid_add_quantities(Array3f &arr, float q, glm::ivec3 index,
 // for each particle, trilinearly interpolate velocity
 // to all grid points nearby
 void Simulation::particles_to_grid() {
+  // rho
+  grid.rho.clear();
+  for (auto p : particles) {
+    glm::ivec3 index;
+    glm::vec3 coords;
+    position_to_grid(p.position, glm::vec3(0, 0, 0), index, coords);
+    grid_add_quantities(grid.rho, 1.0f, index, coords);
+  }
+
   // u
   grid.u.clear();
   grid.count.clear();
@@ -272,16 +281,15 @@ void Simulation::mark_cells() {
 }
 
 void Simulation::advance(float dt) {
-  // std::cout << "advance(" << dt << ")" << std::endl;
-  particles_to_grid();    // done
-  grid.add_gravity(dt);   // done
-  mark_cells();           // done
-  grid.compute_phi();     // done
-  grid.extend_velocity(); // done (? TODO improve this)
-  grid.enforce_boundary();// done
-  grid.project();         // todo
-  grid.extend_velocity(); // done
-  grid_to_particles();    // done
+  particles_to_grid();  // done
+  grid.add_gravity(dt); // done
+  mark_cells();         // done
+  grid.compute_phi();   // done
+  // grid.extend_velocity();  // done
+  grid.enforce_boundary(); // done
+  // grid.project();          // todo
+  // grid.extend_velocity(); // done
+  grid_to_particles(); // done
   for (int i = 0; i < 5; i++)
     advect(0.2 * dt); // done
 }

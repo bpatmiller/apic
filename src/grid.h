@@ -16,23 +16,23 @@ public:
   float nx, ny, nz; // number of cells per dimension
   float h;          // size of each cell
 
-  Array3f u, v, w;    // velocities
-  Array3f count;      // keep track of how many particles
-                      // are near each grid node
-                      // (normalizing velocity field)
-  Array3i marker;     // air, fluid, solid
-  Array3f phi;        // signed distances
-  Array3f pressure;   // self explanatory
-  Array3f rho;        // density
+  Array3f u, v, w;  // velocities
+  Array3f count;    // keep track of how many particles
+                    // are near each grid node
+                    // (normalizing velocity field)
+  Array3i marker;   // air, fluid, solid
+  Array3f phi;      // signed distances
+  Array3f pressure; // self explanatory
+  Array3f rho;      // density
 
-  Array3v3 poission;  //
-  Array3f precon;     //
-  Array3f m;          //
-  Array3f r, z, s;    //
+  Array3v3 poission; //
+  Array3f precon;    //
+  Array3f m;         //
+  Array3f r, z, s;   //
 
   // used for pressure solve
-  Eigen::SparseMatrix<float> A;
-  Eigen::VectorXf x, b;
+  Eigen::SparseMatrix<double> A;
+  Eigen::VectorXd x, b;
 
   Grid() {}
 
@@ -54,6 +54,7 @@ public:
     w.init(nx, ny, nz + 1);
     count.init(nx + 1, ny + 1, nz + 1);
     pressure.init(nx, ny, nz);
+    rho.init(nx, ny, nz);
 
     marker.init(nx, ny, nz);
     phi.init(nx, ny, nz);
@@ -78,10 +79,13 @@ public:
   void sweep_v(int i0, int i1, int j0, int j1, int k0, int k1);
   void sweep_w(int i0, int i1, int j0, int j1, int k0, int k1);
   void enforce_boundary();
+
   void project();
   void compute_divergence();
-  void compute_A();
-  void compute_b();
+  void form_poisson();
+  void apply_poisson();
+  void form_preconditioner();
+  void apply_preconditioner();
   void solve_pressure();
   void add_pressure_gradient();
 };

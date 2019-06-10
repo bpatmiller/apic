@@ -79,7 +79,7 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
 
   // set up velocity field vao
   std::vector<glm::vec3> vel_vertices = {
-      {0.0f, 0.0f, 0.0f}, {0.01f, 1.0f, 0.0f}, {0.02f, 0.0f, 0.0f}};
+      {-0.005f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.005f, 0.0f, 0.0f}};
   vel_indices = {{0, 1, 2}};
   vel_offsets.resize(simulation.grid.phi.size);
   for (int i = 0; i < simulation.grid.phi.sx; i++) {
@@ -171,7 +171,7 @@ void GUI::update() {
         for (int k = 0; k < simulation.grid.phi.sz; k++) {
           grid_offsets[i + (simulation.grid.phi.sx * j) +
                        (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                      [3] = simulation.grid.phi(i, j, k);
+                      [3] = simulation.grid.pressure(i, j, k);
         }
       }
     }

@@ -1,6 +1,8 @@
 #include "grid.h"
 #include "Particle.h"
 #include <algorithm>
+#include <eigen3/Eigen/IterativeLinearSolvers>
+#include <eigen3/Eigen/SparseCholesky>
 #include <iostream>
 
 // ensure no particle moves more than grid.h
@@ -70,7 +72,7 @@ void Grid::sweep_velocity() {
   sweep_v(v.sx - 2, 0, 1, v.sy - 1, v.sz - 2, 0);
   sweep_v(v.sx - 2, 0, v.sy - 2, 0, 1, v.sz - 1);
   sweep_v(v.sx - 2, 0, v.sy - 2, 0, v.sz - 2, 0);
-  // set boundary cells
+  // // set boundary cells
   sweep_velocity_boundary(v);
 
   // W --------------------------------
@@ -114,7 +116,7 @@ void Grid::sweep_u(int i0, int i1, int j0, int j1, int k0, int k1) {
           if (dp + dq + dr == 0) {
             w = 1.0f / 3.0f;
             v(i, j, k) =
-                w * (v(i - di, j, k) + v(i, j - dj, k) + +v(i, j, k - dk));
+                w * (v(i - di, j, k) + v(i, j - dj, k) + v(i, j, k - dk));
           } else {
             w = 1.0f / (dp + dq + dr);
             v(i, j, k) = dp * w * v(i - di, j, k) + dq * w * v(i, j - dj, k) +
@@ -154,7 +156,7 @@ void Grid::sweep_v(int i0, int i1, int j0, int j1, int k0, int k1) {
           if (dp + dq + dr == 0) {
             w = 1.0f / 3.0f;
             v(i, j, k) =
-                w * (v(i - di, j, k) + v(i, j - dj, k) + +v(i, j, k - dk));
+                w * (v(i - di, j, k) + v(i, j - dj, k) + v(i, j, k - dk));
           } else {
             w = 1.0f / (dp + dq + dr);
             v(i, j, k) = dp * w * v(i - di, j, k) + dq * w * v(i, j - dj, k) +
@@ -195,7 +197,7 @@ void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {
           if (dp + dq + dr == 0) {
             w = 1.0f / 3.0f;
             v(i, j, k) =
-                w * (v(i - di, j, k) + v(i, j - dj, k) + +v(i, j, k - dk));
+                w * (v(i - di, j, k) + v(i, j - dj, k) + v(i, j, k - dk));
           } else {
             w = 1.0f / (dp + dq + dr);
             v(i, j, k) = dp * w * v(i - di, j, k) + dq * w * v(i, j - dj, k) +
@@ -233,32 +235,69 @@ void Grid::enforce_boundary() {
 }
 void Grid::project() {
   compute_divergence();
-  compute_A();
-  compute_b();
+  form_poisson();
+  form_preconditioner();
   solve_pressure();
   add_pressure_gradient();
 }
 
-// populate A matrix to solve Ax=b
-  void Grid::compute_A() {
+static inline int ijk_to_index(int i, int j, int k, Array3f &arr) {
+  return i + (arr.sx * j) + (arr.sx * arr.sy * k);
+}
 
+void Grid::form_poisson() {}
+void Grid::apply_poisson() {}
+
+void Grid::form_preconditioner() {}
+
+void Grid::apply_preconditioner() {}
+
+void Grid::solve_pressure() {}
+
+// add the new pressure gradient to the velocity field
+void Grid::add_pressure_gradient() {
+  // u
+  for (int i = 2; i < u.sx - 2; i++) {
+    for (int j = 1; j < u.sy - 1; j++) {
+      for (int k = 1; k < u.sz - 1; k++) {
+        if (marker(i - 1, j, k) == SOLID_CELL || marker(i, j, k == SOLID_CELL))
+          continue;
+        if (marker(i - 1, j, k) == FLUID_CELL ||
+            marker(i, j, k == FLUID_CELL)) {
+          u(i, j, k) += pressure(i, j, k) - pressure(i - 1, j, k);
+        }
+      }
+    }
   }
 
-// populate b vector to solve Ax=b
-  void Grid::compute_b() {
-
+  // v
+  for (int i = 1; i < u.sx - 1; i++) {
+    for (int j = 2; j < u.sy - 2; j++) {
+      for (int k = 1; k < u.sz - 1; k++) {
+        if (marker(i, j - 1, k) == SOLID_CELL || marker(i, j, k == SOLID_CELL))
+          continue;
+        if (marker(i, j - 1, k) == FLUID_CELL ||
+            marker(i, j, k == FLUID_CELL)) {
+          v(i, j, k) += pressure(i, j, k) - pressure(i, j - 1, k);
+        }
+      }
+    }
   }
 
-  // solve for x in Ax=b
-  void Grid::solve_pressure() {
-
+  // w
+  for (int i = 1; i < u.sx - 1; i++) {
+    for (int j = 1; j < u.sy - 1; j++) {
+      for (int k = 2; k < u.sz - 2; k++) {
+        if (marker(i, j, k - 1) == SOLID_CELL || marker(i, j, k == SOLID_CELL))
+          continue;
+        if (marker(i, j, k - 1) == FLUID_CELL ||
+            marker(i, j, k == FLUID_CELL)) {
+          w(i, j, k) += pressure(i, j, k) - pressure(i, j, k - 1);
+        }
+      }
+    }
   }
-
-  // add the new pressure gradient to the velocity field
-  void Grid::add_pressure_gradient() {
-
-  }
-
+}
 
 void Grid::compute_phi() {
   // init
