@@ -27,7 +27,8 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
     std::cout << "PIC mode" << std::endl;
   } else if (key == GLFW_KEY_2 && action == GLFW_RELEASE) {
     gui->simulation.mode = 1;
-    std::cout << "PIC/FLIP mode" << std::endl;
+    std::cout << "PIC/FLIP mode (" << gui->simulation.flip_blend << ")"
+              << std::endl;
   } else if (key == GLFW_KEY_3 && action == GLFW_RELEASE) {
     gui->simulation.mode = 2;
     std::cout << "APIC mode" << std::endl;

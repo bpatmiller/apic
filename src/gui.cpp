@@ -196,14 +196,13 @@ void GUI::update(bool force) {
     for (int i = 0; i < simulation.grid.phi.sx; i++) {
       for (int j = 0; j < simulation.grid.phi.sy; j++) {
         for (int k = 0; k < simulation.grid.phi.sz; k++) {
-          // glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
-          //                         simulation.grid.h * j + offs,
-          //                         simulation.grid.h * k + offs);
+          glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
+                                  simulation.grid.h * j + offs,
+                                  simulation.grid.h * k + offs);
 
           vel_offsets[i + (simulation.grid.phi.sx * j) +
                       (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                     [1] = 10.0f * simulation.grid.lap_pres(
-                                       i, j, k); // simulation.trilerp_uvw(p);
+                     [1] =  simulation.trilerp_uvw(p);
         }
       }
     }

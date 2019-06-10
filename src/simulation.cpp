@@ -284,44 +284,26 @@ void Simulation::mark_cells() {
   // mark solid cells
   int x, y, z;
   // top and bottom (y axis)
-  y = grid.marker.sy - 1;
   for (int i = 0; i < grid.marker.sx; i++) {
     for (int k = 0; k < grid.marker.sy; k++) {
-      grid.marker(i, y, k) = SOLID_CELL;
-    }
-  }
-  y = 0;
-  for (int i = 0; i < grid.marker.sx; i++) {
-    for (int k = 0; k < grid.marker.sy; k++) {
-      grid.marker(i, y, k) = SOLID_CELL;
+      grid.marker(i, grid.marker.sy - 1, k) = SOLID_CELL;
+      grid.marker(i, 0, k) = SOLID_CELL;
     }
   }
 
   // left and right (x axis)
-  x = grid.marker.sx - 1;
   for (int j = 0; j < grid.marker.sy; j++) {
     for (int k = 0; k < grid.marker.sz; k++) {
-      grid.marker(x, j, k) = SOLID_CELL;
-    }
-  }
-  x = 0;
-  for (int j = 0; j < grid.marker.sy; j++) {
-    for (int k = 0; k < grid.marker.sz; k++) {
-      grid.marker(x, j, k) = SOLID_CELL;
+      grid.marker(grid.marker.sx - 1, j, k) = SOLID_CELL;
+      grid.marker(0, j, k) = SOLID_CELL;
     }
   }
 
   // front and back (z axis)
-  z = grid.marker.sz - 1;
   for (int i = 0; i < grid.marker.sx; i++) {
     for (int j = 0; j < grid.marker.sy; j++) {
-      grid.marker(i, j, z) = SOLID_CELL;
-    }
-  }
-  z = 0;
-  for (int i = 0; i < grid.marker.sx; i++) {
-    for (int j = 0; j < grid.marker.sy; j++) {
-      grid.marker(i, j, z) = SOLID_CELL;
+      grid.marker(i, j, grid.marker.sz - 1) = SOLID_CELL;
+      grid.marker(i, j, 0) = SOLID_CELL;
     }
   }
 }

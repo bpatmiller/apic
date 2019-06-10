@@ -5,12 +5,18 @@
 #include <eigen3/Eigen/SparseCholesky>
 #include <iostream>
 
+static inline int ijk_to_index(int i, int j, int k, Array3f &arr) {
+  return i + (arr.sx * j) + (arr.sx * arr.sy * k);
+}
+
+static inline double sqr(double d) { return std::pow(d, 2.0); }
+static inline float sqr(float f) { return std::pow(f, 2.0f); }
+
 // ensure no particle moves more than grid.h
 float Grid::CFL() {
-  float maxsq = glm::pow(u.infnorm(), 2.0f) + glm::pow(w.infnorm(), 2.0f) +
-                glm::pow(v.infnorm(), 2.0f);
+  float maxsq = sqr(u.infnorm()) + sqr(w.infnorm()) + sqr(v.infnorm());
   maxsq = std::max(maxsq, 1e-16f);
-  return std::max(1e-3f, h / std::sqrt(maxsq));
+  return std::max(1e-6f, h / std::sqrt(maxsq));
 }
 
 void Grid::add_gravity(float dt) {
@@ -237,12 +243,6 @@ void Grid::enforce_boundary() {
   }
 }
 
-static inline int ijk_to_index(int i, int j, int k, Array3f &arr) {
-  return i + (arr.sx * j) + (arr.sx * arr.sy * k);
-}
-
-static inline double sqr(double d) { return std::pow(d, 2.0); }
-
 void Grid::project(float dt) {
   compute_divergence();
   form_poisson(dt);
@@ -253,7 +253,7 @@ void Grid::project(float dt) {
 
 void Grid::form_poisson(float dt) {
   poisson.clear();
-  float scale = dt / (density * h * h);
+  double scale = dt / (density * h * h);
   // float scale = 1.0;
   for (int i = 1; i < poisson.sx; i++) {
     for (int j = 1; j < poisson.sy; j++) {
@@ -416,7 +416,8 @@ void Grid::solve_pressure() {
 
 // add the new pressure gradient to the velocity field
 void Grid::add_pressure_gradient(float dt) {
-  double scale = -dt / (density * h);
+  lap_pres.clear();
+  double scale = - 1.3 * dt / (density * h);
   // u
   for (int i = 2; i < u.sx - 2; i++) {
     for (int j = 1; j < u.sy - 1; j++) {

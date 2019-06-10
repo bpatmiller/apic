@@ -14,7 +14,7 @@ public:
   Grid grid;
   std::vector<Particle> particles;
   int mode = 1;
-  float flip_blend = 0.25f;
+  float flip_blend = 0.95f; // 0.05 flip, 0.95 pic
 
   Simulation(){};
 

@@ -15,7 +15,7 @@ public:
   float lx, ly, lz;  // total length of grid
   float nx, ny, nz;  // number of cells per dimension
   float h;           // size of each cell
-  float density = 8; //
+  float density = 1.0f; //
 
   Array3f u, v, w;    // velocities
   Array3f du, dv, dw; // saved velocities for flip
