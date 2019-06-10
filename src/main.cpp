@@ -23,14 +23,14 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
   } else if (key == GLFW_KEY_V && action == GLFW_RELEASE) {
     gui->draw_velocity = !gui->draw_velocity;
   } else if (key == GLFW_KEY_1 && action == GLFW_RELEASE) {
-    gui->simulation.mode = 0;
+    gui->simulation.mode = PIC_MODE;
     std::cout << "PIC mode" << std::endl;
   } else if (key == GLFW_KEY_2 && action == GLFW_RELEASE) {
-    gui->simulation.mode = 1;
+    gui->simulation.mode = PIC_FLIP_MODE;
     std::cout << "PIC/FLIP mode (" << gui->simulation.flip_blend << ")"
               << std::endl;
   } else if (key == GLFW_KEY_3 && action == GLFW_RELEASE) {
-    gui->simulation.mode = 2;
+    gui->simulation.mode = APIC_MODE;
     std::cout << "APIC mode" << std::endl;
   } else if (key == GLFW_KEY_O && action == GLFW_RELEASE) {
     std::cout << "resetting simulation" << std::endl;

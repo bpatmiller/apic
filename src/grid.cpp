@@ -16,7 +16,7 @@ static inline float sqr(float f) { return std::pow(f, 2.0f); }
 float Grid::CFL() {
   float maxsq = sqr(u.infnorm()) + sqr(w.infnorm()) + sqr(v.infnorm());
   maxsq = std::max(maxsq, 1e-16f);
-  return std::max(1e-6f, h / std::sqrt(maxsq));
+  return h / std::sqrt(maxsq);
 }
 
 void Grid::add_gravity(float dt) {
@@ -391,8 +391,8 @@ void Grid::apply_preconditioner(Array3d &x, Array3d &y, Array3d &m) {
 }
 
 void Grid::solve_pressure() {
-  int max_its = 500;
-  double tol = 1e-7 * r.infnorm();
+  int max_its = 200;
+  double tol = 1e-6 * r.infnorm();
   pressure.clear();
   // if no divergence
   if (r.infnorm() == 0)
@@ -510,7 +510,7 @@ void Grid::sweep_phi() {
   // f, f, b
   for (int i = 1; i < phi.sx; i++) {
     for (int j = 1; j < phi.sy; j++) {
-      for (int k = phi.sz - 2; k >= 0; k--) {
+      for (int k = phi.sz -2; k >= 0; k--) {
         if (marker(i, j, k) != FLUID_CELL)
           solve_phi(phi(i - 1, j, k), phi(i, j - 1, k), phi(i, j, k + 1),
                     phi(i, j, k));
@@ -587,13 +587,21 @@ void Grid::sweep_phi() {
 }
 
 void Grid::solve_phi(float p, float q, float r, float &c) {
-  float md = std::fmin(std::fmin(p, q), r) + 1;
-  // FIXME improve sweeping algorithm
-  // if (md > std::fmax(p,q)) {
-  //   md = (p+q+sqrt(2-sqr(p-q)))/2;
-  // }
-  if (md < c)
-    c = md;
+  float pqmin = std::fmin(p,q);
+  float pqmax = std::fmax(p,q);
+  float min = std::fmin(r,pqmin);
+  float max = std::fmax(r,pqmax);
+  float mid = std::fmax(std::fmin(r,pqmax), pqmin);
+
+  float d =min + 1;
+  if (d > mid) {
+    d = (min+mid+std::sqrt(2.0-sqr(min-mid)))*0.5;
+    if (d > max) {
+      d = (min+mid+max+std::sqrt(3.0-2.0*(min*min-min*mid-min*max+mid*mid-mid*max+max*max))) / 3.0;
+    }
+  }
+  if (d < c)
+    c = d;
 }
 
 void Grid::compute_divergence() {

@@ -13,9 +13,9 @@
 // initialize "dam break" scenario
 void Simulation::add_particle_box() {
   particles.clear();
-  for (int x = grid.nx * 0.4; x < grid.nx - 2; x++) {
-    for (int y = 2; y < grid.ny - 2; y++) {
-      for (int z = 2; z < grid.nz - 2; z++) {
+  for (int x = grid.nx * 0.5; x < grid.nx - 2; x++) {
+    for (int y = grid.ny * 0.2; y < grid.ny - 2; y++) {
+      for (int z = grid.nz * 0.1; z < grid.nz - 2; z++) {
         // for each cell, add 8 new jittered particles
         float base_x = x * grid.h;
         float base_y = y * grid.h;
@@ -153,32 +153,26 @@ void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
   float w;
   float coef;
 
-  // done
   w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);
   coef = glm::dot(c, glm::vec3(-coords.x, -coords.y, -coords.z) * grid.h);
   accum(index.x, index.y, index.z) += w * coef;
 
-  // done
   w = (1 - coords.x) * (1 - coords.y) * (coords.z);
   coef = glm::dot(c, glm::vec3(-coords.x, -coords.y, 1 - coords.z) * grid.h);
   accum(index.x, index.y, index.z + 1) += w * coef;
 
-  // done
   w = (1 - coords.x) * (coords.y) * (1 - coords.z);
   coef = glm::dot(c, glm::vec3(-coords.x, 1 - coords.y, -coords.z) * grid.h);
   accum(index.x, index.y + 1, index.z) += w * coef;
 
-  // done
   w = (1 - coords.x) * (coords.y) * (coords.z);
   coef = glm::dot(c, glm::vec3(-coords.x, 1 - coords.y, 1 - coords.z) * grid.h);
   accum(index.x, index.y + 1, index.z + 1) += w * coef;
 
-  // done
   w = (coords.x) * (1 - coords.y) * (1 - coords.z);
   coef = glm::dot(c, glm::vec3(1 - coords.x, -coords.y, -coords.z) * grid.h);
   accum(index.x + 1, index.y, index.z) += w * coef;
 
-  //
   w = (coords.x) * (1 - coords.y) * (coords.z);
   coef = glm::dot(c, glm::vec3(1 - coords.x, -coords.y, 1 - coords.z) * grid.h);
   accum(index.x + 1, index.y, index.z + 1) += w * coef;
