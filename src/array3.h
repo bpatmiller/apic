@@ -20,6 +20,15 @@ template <class T> struct Array3 {
     init();
   }
 
+  ~Array3() {
+    delete[] data;
+    data = 0;
+    sx = 0;
+    sy = 0;
+    sz = 0;
+    size = 0;
+  }
+
   void init() {
     size = sx * sy * sz;
     data = new T[size];
