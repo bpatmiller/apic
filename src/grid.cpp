@@ -251,13 +251,7 @@ void Grid::enforce_boundary() {
 
 void Grid::project(float dt) {
   compute_divergence();
-  if (false) {
-    solve_x(dt);
-  } else {
-    form_poisson(dt);
-    form_preconditioner();
-    solve_pressure();
-  }
+  solve_x(dt);
   add_pressure_gradient(dt);
 }
 
@@ -267,8 +261,9 @@ void Grid::solve_x_helper(std::vector<Eigen::Triplet<double>> &tl, double &aii,
   if (marker(i1, j1, k1) != SOLID_CELL) {
     aii += 1;
     if (marker(i1, j1, k1) == FLUID_CELL) {
-      tl.push_back(Eigen::Triplet<double>(
-          fl_index(i, j, k), fl_index(i1, j1, k1), -dt / (density * h * h)));
+      double scale = dt / (density * h * h);
+      tl.push_back(Eigen::Triplet<double>(fl_index(i, j, k),
+                                          fl_index(i1, j1, k1), -scale));
     }
   }
 }
@@ -292,6 +287,7 @@ void Grid::solve_x(float dt) {
   // populate triplets
   std::vector<Eigen::Triplet<double>> tripletList;
   tripletList.reserve(nf * 7);
+  double scale = dt / (density * h * h);
   for (int i = 0; i < r.sx; i++) {
     for (int j = 0; j < r.sy; j++) {
       for (int k = 0; k < r.sz; k++) {
@@ -304,8 +300,8 @@ void Grid::solve_x(float dt) {
           solve_x_helper(tripletList, aii, dt, i, j, k, i, j - 1, k);
           solve_x_helper(tripletList, aii, dt, i, j, k, i, j, k + 1);
           solve_x_helper(tripletList, aii, dt, i, j, k, i, j, k - 1);
-          tripletList.push_back(Eigen::Triplet<double>(
-              index, index, aii * dt / (density * h * h)));
+          tripletList.push_back(
+              Eigen::Triplet<double>(index, index, aii * scale));
         }
       }
     }
@@ -320,7 +316,7 @@ void Grid::solve_x(float dt) {
     for (int j = 0; j < r.sy; j++) {
       for (int k = 0; k < r.sz; k++) {
         if (marker(i, j, k) == FLUID_CELL) {
-          b(fl_index(i, j, k)) = r(i, j, k);
+          b(fl_index(i, j, k)) = (-1.0 / h) * r(i, j, k);
         }
       }
     }
@@ -333,8 +329,6 @@ void Grid::solve_x(float dt) {
   x = solver.solve(b);
 
   if (solver.info() != Eigen::Success) {
-    // std::cout << "iterations: " << solver.iterations() << std::endl;
-    // std::cout << "cg error term: " << solver.error() << std::endl;
     throw std::runtime_error("pressure not solved");
   }
 
@@ -344,177 +338,17 @@ void Grid::solve_x(float dt) {
     for (int j = 0; j < fl_index.sy; j++) {
       for (int k = 0; k < fl_index.sz; k++) {
         if (marker(i, j, k) == FLUID_CELL) {
-          pressure(i, j, k) = b(fl_index(i, j, k));
+          pressure(i, j, k) = x(fl_index(i, j, k));
         }
       }
     }
   }
-}
-
-void Grid::form_poisson(float dt) {
-  poisson.clear();
-  double scale = dt / (density * h * h);
-  for (int i = 1; i < poisson.sx; i++) {
-    for (int j = 1; j < poisson.sy; j++) {
-      for (int k = 1; k < poisson.sz; k++) {
-        if (marker(i, j, k) == FLUID_CELL) {
-          // plus and minus x
-          if (marker(i - 1, j, k) == FLUID_CELL) {
-            poisson(i, j, k)[0] += scale;
-          }
-          if (marker(i + 1, j, k) == FLUID_CELL) {
-            poisson(i, j, k)[0] += scale;
-            poisson(i, j, k)[1] -= scale;
-          } else if (marker(i + 1, j, k) == AIR_CELL) {
-            poisson(i, j, k)[0] += scale;
-          }
-          // plus and minus y
-          if (marker(i, j - 1, k) == FLUID_CELL) {
-            poisson(i, j, k)[0] += scale;
-          }
-          if (marker(i, j + 1, k) == FLUID_CELL) {
-            poisson(i, j, k)[0] += scale;
-            poisson(i, j, k)[2] -= scale;
-          } else if (marker(i, j + 1, k) == AIR_CELL) {
-            poisson(i, j, k)[0] += scale;
-          }
-          // plus and minus z
-          if (marker(i, j, k - 1) == FLUID_CELL) {
-            poisson(i, j, k)[0] += 1.0;
-          }
-          if (marker(i, j, k + 1) == FLUID_CELL) {
-            poisson(i, j, k)[0] += 1.0;
-            poisson(i, j, k)[3] -= 1.0;
-          } else if (marker(i, j, k + 1) == AIR_CELL) {
-            poisson(i, j, k)[0] += 1.0;
-          }
-        }
-      }
-    }
-  }
-}
-void Grid::apply_poisson(Array3d &x, Array3d &y) {
-  y.clear();
-  for (int i = 1; i < poisson.sx - 1; i++) {
-    for (int j = 1; j < poisson.sy - 1; j++) {
-      for (int k = 1; k < poisson.sz - 1; k++) {
-        if (marker(i, j, k) == FLUID_CELL) {
-          y(i, j, k) = poisson(i, j, k)[0] * x(i, j, k) +
-                       poisson(i - 1, j, k)[1] * x(i - 1, j, k) +
-                       poisson(i, j, k)[1] * x(i + 1, j, k) +
-                       poisson(i, j - 1, k)[2] * x(i, j - 1, k) +
-                       poisson(i, j, k)[2] * x(i, j + 1, k) +
-                       poisson(i, j, k - 1)[3] * x(i, j, k - 1) +
-                       poisson(i, j, k)[3] * x(i, j, k + 1);
-        }
-      }
-    }
-  }
-}
-
-void Grid::form_preconditioner() {
-  precon.clear();
-  double error_param = 0.97;
-  double tuning = 0.25;
-  for (int i = 1; i < precon.sx - 1; i++) {
-    for (int j = 1; j < precon.sy - 1; j++) {
-      for (int k = 1; k < precon.sz - 1; k++) {
-        double d =
-            poisson(i, j, k)[0] -
-            sqr(poisson(i - 1, j, k)[1] * precon(i - 1, j, k)) -
-            sqr(poisson(i, j - 1, k)[2] * precon(i, j - 1, k)) -
-            sqr(poisson(i, j, k - 1)[3] * precon(i, j, k - 1)) -
-            error_param *
-                (poisson(i - 1, j, k)[1] *
-                     (poisson(i - 1, j, k)[2] + poisson(i - 1, j, k)[3]) *
-                     sqr(precon(i - 1, j, k)) +
-                 poisson(i, j - 1, k)[2] *
-                     (poisson(i, j - 1, k)[1] + poisson(i, j - 1, k)[3]) *
-                     sqr(precon(i, j - 1, k)) +
-                 poisson(i, j, k - 1)[3] *
-                     (poisson(i, j, k - 1)[1] + poisson(i, j, k - 1)[2]) *
-                     sqr(precon(i, j, k - 1)));
-
-        if (d < tuning * poisson(i, j, k)[0])
-          d = poisson(i, j, k)[0];
-        if (d == 0)
-          d = 1e-6;
-        precon(i, j, k) = 1.0 / std::sqrt(d);
-      }
-    }
-  }
-}
-
-void Grid::apply_preconditioner(Array3d &x, Array3d &y, Array3d &m) {
-  // Lq=r
-  m.clear();
-  for (int i = 1; i < m.sx - 1; i++) {
-    for (int j = 1; j < m.sy - 1; j++) {
-      for (int k = 1; k < m.sz - 1; k++) {
-        if (marker(i, j, k) == FLUID_CELL) {
-          double t =
-              x(i, j, k) -
-              poisson(i - 1, j, k)[1] * precon(i - 1, j, k) * m(i - 1, j, k) -
-              poisson(i, j - 1, k)[2] * precon(i, j - 1, k) * m(i, j - 1, k) -
-              poisson(i, j, k - 1)[3] * precon(i, j, k - 1) * m(i, j, k - 1);
-          m(i, j, k) = t * precon(i, j, k);
-        }
-      }
-    }
-  }
-
-  // L'z=q
-  y.clear();
-  for (int i = x.sx - 2; i > 0; i--) {
-    for (int j = x.sy - 2; j > 0; j--) {
-      for (int k = x.sz - 2; k > 0; k--) {
-        if (marker(i, j, k) == FLUID_CELL) {
-          double t = m(i, j, k) -
-                     poisson(i, j, k)[1] * precon(i, j, k) * y(i + 1, j, k) -
-                     poisson(i, j, k)[2] * precon(i, j, k) * y(i, j + 1, k) -
-                     poisson(i, j, k)[3] * precon(i, j, k) * y(i, j, k + 1);
-          y(i, j, k) = t * precon(i, j, k);
-        }
-      }
-    }
-  }
-}
-
-void Grid::solve_pressure() {
-  int max_its = 200;
-  double tol = 1e-5 * r.infnorm();
-  pressure.clear();
-  // if no divergence
-  if (r.infnorm() == 0)
-    return;
-  apply_preconditioner(r, z, m);
-  z.copy(s);
-  double sigma = z.dot(r);
-  if (sigma == 0)
-    return;
-  for (int i = 0; i < max_its; i++) {
-    apply_poisson(s, z);
-    double a = sigma / s.dot(z);
-    pressure.inc(a, s);
-    r.inc(-a, z);
-    if (r.infnorm() <= tol) {
-      // std::cout << "pressure converged with tol " << r.infnorm() << " and "
-      // << i
-      //           << " iterations" << std::endl;
-      return;
-    }
-    apply_preconditioner(r, z, m);
-    double sigma_n = z.dot(r);
-    double b = sigma_n / sigma;
-    s.scale_inc(b, z);
-    sigma = sigma_n;
-  }
-  throw std::runtime_error("pressure not solved");
 }
 
 // add the new pressure gradient to the velocity field
 void Grid::add_pressure_gradient(float dt) {
   double scale = -dt / (density * h);
+  // double scale = 1.0;
   // u
   for (int i = 2; i < u.sx - 2; i++) {
     for (int j = 1; j < u.sy - 1; j++) {
@@ -524,7 +358,7 @@ void Grid::add_pressure_gradient(float dt) {
             marker(i, j, k) == FLUID_CELL) {
           if (marker(i - 1, j, k) == SOLID_CELL ||
               marker(i, j, k) == SOLID_CELL) {
-            // u(i, j, k) = 0;
+            continue;
           } else {
             u(i, j, k) += scale * (pressure(i, j, k) - pressure(i - 1, j, k));
           }
@@ -541,7 +375,7 @@ void Grid::add_pressure_gradient(float dt) {
             marker(i, j, k) == FLUID_CELL) {
           if (marker(i, j - 1, k) == SOLID_CELL ||
               marker(i, j, k) == SOLID_CELL) {
-            // v(i, j, k) = 0;
+            continue;
           } else {
             v(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j - 1, k));
           }
@@ -558,7 +392,7 @@ void Grid::add_pressure_gradient(float dt) {
             marker(i, j, k) == FLUID_CELL) {
           if (marker(i, j, k - 1) == SOLID_CELL ||
               marker(i, j, k) == SOLID_CELL) {
-            // w(i, j, k) = 0;
+            continue;
           } else {
             w(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j, k - 1));
           }
@@ -704,14 +538,13 @@ void Grid::solve_phi(float p, float q, float r, float &c) {
 }
 
 void Grid::compute_divergence() {
-  double scale = -1.0 / h;
   r.clear();
   for (int i = 0; i < r.sx; i++) {
     for (int j = 0; j < r.sy; j++) {
       for (int k = 0; k < r.sz; k++) {
         if (marker(i, j, k) == FLUID_CELL)
-          r(i, j, k) = scale * (u(i + 1, j, k) - u(i, j, k) + v(i, j + 1, k) -
-                                v(i, j, k) + w(i, j, k + 1) - w(i, j, k));
+          r(i, j, k) = u(i + 1, j, k) - u(i, j, k) + v(i, j + 1, k) -
+                       v(i, j, k) + w(i, j, k + 1) - w(i, j, k);
       }
     }
   }

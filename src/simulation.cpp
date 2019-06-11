@@ -14,8 +14,8 @@
 void Simulation::add_particle_box() {
   particles.clear();
   for (int x = grid.nx * 0.5; x < grid.nx - 2; x++) {
-    for (int y = grid.ny * 0.2; y < grid.ny - 2; y++) {
-      for (int z = grid.nz * 0.1; z < grid.nz - 2; z++) {
+    for (int y = grid.ny * 0.1; y < grid.ny - 2; y++) {
+      for (int z = 2; z < grid.nz - 2; z++) {
         // for each cell, add 8 new jittered particles
         float base_x = x * grid.h;
         float base_y = y * grid.h;
@@ -24,8 +24,10 @@ void Simulation::add_particle_box() {
           float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
           float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
           float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
-          particles.emplace_back(Particle(glm::vec3(
-              base_x + jitter_x, base_y + jitter_y, base_z + jitter_z)));
+          particles.emplace_back(
+              Particle(glm::vec3(base_x + jitter_x, base_y + jitter_y,
+                                 base_z + jitter_z),
+                       glm::vec3(0, 0.0f, 0)));
           // APIC vectors
           cx.emplace_back(glm::vec3(0));
           cy.emplace_back(glm::vec3(0));

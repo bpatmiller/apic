@@ -13,4 +13,9 @@ public:
     position = p;
     velocity = glm::vec3(0, 0, 0);
   }
+
+  Particle(glm::vec3 p, glm::vec3 v) {
+    position = p;
+    velocity = v;
+  }
 };

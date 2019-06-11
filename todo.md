@@ -8,9 +8,10 @@
 -velocity from pressure gradient
 -add affine transform
 -fix numerical dissapation (gravity? boundary conditions?) spoiler alert it was something dumb like my sweep functions
+-switch to eigen for pressure solve
 
 ## todo
-switch to eigen for pressure solve
+fix boundary conditions (clinging)
 
 ## further work
 -set up partio
