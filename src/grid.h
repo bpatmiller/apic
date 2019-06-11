@@ -27,7 +27,7 @@ public:
   Array3d pressure;   // self explanatory
   Array3f rho;        // density
 
-  Array3v3 lap_pres;
+  Array3i fl_index; //
 
   Array3v4 poisson; // Adiag, Ax, Ay, Az
   Array3d precon;   //
@@ -63,7 +63,7 @@ public:
     pressure.init(nx, ny, nz);
     rho.init(nx, ny, nz);
 
-    lap_pres.init(nx, ny, nz);
+    fl_index.init(nx, ny, nz);
 
     marker.init(nx, ny, nz);
     phi.init(nx, ny, nz);
@@ -87,7 +87,7 @@ public:
     pressure.clear();
     rho.clear();
 
-    lap_pres.clear();
+    fl_index.clear();
 
     marker.clear();
     phi.clear();
@@ -120,4 +120,8 @@ public:
   void apply_preconditioner(Array3d &x, Array3d &y, Array3d &m);
   void solve_pressure();
   void add_pressure_gradient(float dt);
+
+  void solve_x_helper(std::vector<Eigen::Triplet<double>> &tl, double &aii,
+                      float dt, int i, int j, int k, int i1, int j1, int k1);
+  void solve_x(float dt);
 };
