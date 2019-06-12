@@ -43,8 +43,8 @@ public:
   // helper functions
   void position_to_grid(glm::vec3 p, glm::vec3 offset, glm::ivec3 &index,
                         glm::vec3 &coords);
-  void grid_add_quantities(Array3f &arr, float q, glm::ivec3 index,
-                           glm::vec3 coords);
+  template <class T>
+  void grid_add_quantities(T &arr, float q, glm::ivec3 index, glm::vec3 coords);
   glm::vec3 trilerp_uvw(glm::vec3 p);
   glm::vec3 trilerp_dudvdw(glm::vec3 p);
 

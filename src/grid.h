@@ -15,7 +15,7 @@ public:
   float lx, ly, lz;     // total length of grid
   float nx, ny, nz;     // number of cells per dimension
   float h;              // size of each cell
-  float density = 1.0f; //
+  float density = 8.0f; //
 
   Array3f u, v, w;    // velocities
   Array3f du, dv, dw; // saved velocities for flip
@@ -26,13 +26,8 @@ public:
   Array3f phi;        // signed distances
   Array3d pressure;   // self explanatory
   Array3f rho;        // density
-
-  Array3i fl_index; //
-
-  Array3v4 poisson; // Adiag, Ax, Ay, Az
-  Array3d precon;   //
-  Array3d m;        //
-  Array3d r, z, s;  //
+  Array3d r;          // divergence
+  Array3i fl_index;   // gives each fluid cell an index
 
   // used for pressure solve
   Eigen::SparseMatrix<double> A;
@@ -60,20 +55,13 @@ public:
     dv.init(nx, ny + 1, nz);
     dw.init(nx, ny, nz + 1);
     count.init(nx + 1, ny + 1, nz + 1);
-    pressure.init(nx, ny, nz);
-    rho.init(nx, ny, nz);
-
-    fl_index.init(nx, ny, nz);
 
     marker.init(nx, ny, nz);
     phi.init(nx, ny, nz);
-
-    poisson.init(nx, ny, nz);
-    precon.init(nx, ny, nz);
-    m.init(nx, ny, nz);
+    pressure.init(nx, ny, nz);
+    rho.init(nx, ny, nz);
     r.init(nx, ny, nz);
-    z.init(nx, ny, nz);
-    s.init(nx, ny, nz);
+    fl_index.init(nx, ny, nz);
   }
 
   void reset() {
@@ -84,19 +72,13 @@ public:
     dv.clear();
     dw.clear();
     count.clear();
-    pressure.clear();
-    rho.clear();
-
-    fl_index.clear();
 
     marker.clear();
     phi.clear();
-    poisson.clear();
-    precon.clear();
-    m.clear();
+    pressure.clear();
+    rho.clear();
     r.clear();
-    z.clear();
-    s.clear();
+    fl_index.clear();
   }
 
   float CFL();

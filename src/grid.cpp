@@ -348,7 +348,6 @@ void Grid::solve_x(float dt) {
 // add the new pressure gradient to the velocity field
 void Grid::add_pressure_gradient(float dt) {
   double scale = -dt / (density * h);
-  // double scale = 1.0;
   // u
   for (int i = 2; i < u.sx - 2; i++) {
     for (int j = 1; j < u.sy - 1; j++) {
