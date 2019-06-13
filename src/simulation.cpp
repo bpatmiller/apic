@@ -15,7 +15,7 @@ void Simulation::add_particle_box() {
   particles.clear();
   for (int x = grid.nx * 0.5; x < grid.nx - 2; x++) {
     for (int y = grid.ny * 0.1; y < grid.ny - 2; y++) {
-      for (int z = 2; z < grid.nz - 2; z++) {
+      for (int z = grid.nz * 0.5; z < grid.nz - 2; z++) {
         // for each cell, add 8 new jittered particles
         float base_x = x * grid.h;
         float base_y = y * grid.h;
@@ -278,8 +278,8 @@ void Simulation::particles_to_grid() {
 // return gradient of weighted field
 glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
                                 glm::vec3 coords) {
-  glm::vec3 c(0.0f, 0.0f, 0.0f);
-  glm::vec3 wv(0.0f, 0.0f, 0.0f);
+  glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
+  glm::vec3 wv = glm::vec3(0.0f, 0.0f, 0.0f);
   float w;
 
   w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);
@@ -314,7 +314,7 @@ glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
   wv = glm::vec3(1 - coords.x, 1 - coords.y, 1 - coords.z) * grid.h;
   c += w * wv * field(index.x + 1, index.y + 1, index.z + 1);
 
-  return c;
+  return c / grid.h;
 }
 
 void Simulation::grid_to_particles() {

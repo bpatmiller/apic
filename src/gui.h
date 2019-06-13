@@ -7,6 +7,7 @@
 #include "simulation.h"
 #include <GLFW/glfw3.h>
 #include <map>
+#include <Partio.h>
 
 class GUI {
 public:
@@ -15,9 +16,12 @@ public:
   void update(bool force);
   void update();
   void update_camera();
+  void save_particles();
 
   // simulation data
   Simulation simulation;
+  float timestep = 0.01f;
+  float totaltime = 0.0f;
 
   // gl variables
   GLFWwindow *window;
