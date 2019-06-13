@@ -18,7 +18,7 @@ public:
   std::vector<glm::vec3> cz;
 
   int mode = APIC_MODE;
-  float flip_blend = 0.0f;
+  float flip_blend = 0.9f;
 
   Simulation(){};
 
