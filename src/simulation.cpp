@@ -140,7 +140,7 @@ void Simulation::grid_add_quantities(T &arr, float q, glm::ivec3 index,
 template <class T>
 void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
                             glm::vec3 coords) {
-  
+
   int max_w = (2 * range) - 1;       // (2 * 1) - 1 = 1
   int scale = max_w * max_w * max_w; // 1 * 1 * 1 = 1
   float w;
@@ -150,12 +150,14 @@ void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
     for (int j = 1 - range; j <= range; j++) {
       for (int k = 1 - range; k <= range; k++) {
         if (index.x + i < 0 || index.x + i >= accum.sx || index.y + j < 0 ||
-            index.y + j >= accum.sy || index.z + k < 0 || index.z + k >= accum.sz)
+            index.y + j >= accum.sy || index.z + k < 0 ||
+            index.z + k >= accum.sz)
           continue;
         w = (max_w - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
             (max_w - std::fabs(j - coords.y)) * // {""}
-            (max_w - std::fabs(k - coords.z)) * scale;       //{""}
-        coef = glm::dot(c, glm::vec3(i-coords.x, j-coords.y, k-coords.z) * grid.h);
+            (max_w - std::fabs(k - coords.z)) * scale; //{""}
+        coef = glm::dot(c, glm::vec3(i - coords.x, j - coords.y, k - coords.z) *
+                               grid.h);
         accum(index.x + i, index.y + j, index.z + k) += w * coef; //{0,1}
       }
     }
@@ -249,56 +251,41 @@ void Simulation::particles_to_grid() {
 // return gradient of weighted field
 glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
                                 glm::vec3 coords) {
-  glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
-  glm::vec3 wv;
+  int max_w = (2 * range) - 1;       // (2 * 1) - 1 = 1
+  int scale = max_w * max_w * max_w; // 1 * 1 * 1 = 1
   float w;
+  glm::vec3 wv;
+  glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
 
-  w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);
-  wv = glm::vec3(-coords.x, -coords.y, -coords.z);
-  c += w * wv * field(index.x, index.y, index.z);
-
-  w = (1 - coords.x) * (1 - coords.y) * (coords.z);
-  wv = glm::vec3(-coords.x, -coords.y, 1 - coords.z);
-  c += w * wv * field(index.x, index.y, index.z + 1);
-
-  w = (1 - coords.x) * (coords.y) * (1 - coords.z);
-  wv = glm::vec3(-coords.x, 1 - coords.y, -coords.z);
-  c += w * wv * field(index.x, index.y + 1, index.z);
-
-  w = (1 - coords.x) * (coords.y) * (coords.z);
-  wv = glm::vec3(-coords.x, 1 - coords.y, 1 - coords.z);
-  c += w * wv * field(index.x, index.y + 1, index.z + 1);
-
-  w = (coords.x) * (1 - coords.y) * (1 - coords.z);
-  wv = glm::vec3(1 - coords.x, -coords.y, -coords.z);
-  c += w * wv * field(index.x + 1, index.y, index.z);
-
-  w = (coords.x) * (1 - coords.y) * (coords.z);
-  wv = glm::vec3(1 - coords.x, -coords.y, 1 - coords.z);
-  c += w * wv * field(index.x + 1, index.y, index.z + 1);
-
-  w = (coords.x) * (coords.y) * (1 - coords.z);
-  wv = glm::vec3(1 - coords.x, 1 - coords.y, -coords.z);
-  c += w * wv * field(index.x + 1, index.y + 1, index.z);
-
-  w = (coords.x) * (coords.y) * (coords.z);
-  wv = glm::vec3(1 - coords.x, 1 - coords.y, 1 - coords.z);
-  c += w * wv * field(index.x + 1, index.y + 1, index.z + 1);
-
-  return c * grid.h;
+  for (int i = 1 - range; i <= range; i++) { // {0,1}
+    for (int j = 1 - range; j <= range; j++) {
+      for (int k = 1 - range; k <= range; k++) {
+        if (index.x + i < 0 || index.x + i >= field.sx || index.y + j < 0 ||
+            index.y + j >= field.sy || index.z + k < 0 ||
+            index.z + k >= field.sz)
+          continue;
+        w = (max_w - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
+            (max_w - std::fabs(j - coords.y)) * // {""}
+            (max_w - std::fabs(k - coords.z)) * scale; //{""}
+        wv = glm::vec3(i - coords.x, j - coords.y, k - coords.z) * grid.h;
+        c += w * wv * field(index.x + i, index.y + j, index.z + k);
+      }
+    }
+  }
+  return c;
 }
 
 void Simulation::grid_to_particles() {
   // pic flip velocity differences
   if (mode == PIC_FLIP_MODE) {
-    for (int i = 0; i < grid.u.size; i++) {
-      grid.du.data[i] = grid.u.data[i] - grid.du.data[i];
+    for (int nu = 0; nu < grid.u.size; nu++) {
+      grid.du.data[nu] = grid.u.data[nu] - grid.du.data[nu];
     }
-    for (int i = 0; i < grid.v.size; i++) {
-      grid.dv.data[i] = grid.v.data[i] - grid.dv.data[i];
+    for (int nv = 0; nv < grid.v.size; nv++) {
+      grid.dv.data[nv] = grid.v.data[nv] - grid.dv.data[nv];
     }
-    for (int i = 0; i < grid.w.size; i++) {
-      grid.dw.data[i] = grid.w.data[i] - grid.dw.data[i];
+    for (int nw = 0; nw < grid.w.size; nw++) {
+      grid.dw.data[nw] = grid.w.data[nw] - grid.dw.data[nw];
     }
   }
 
