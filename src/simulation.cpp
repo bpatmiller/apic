@@ -117,39 +117,25 @@ void Simulation::position_to_grid(glm::vec3 p, glm::vec3 offset,
 template <class T>
 void Simulation::grid_add_quantities(T &arr, float q, glm::ivec3 index,
                                      glm::vec3 coords) {
+  int range = 1;
+  int max_w = (2 * range) - 1;       // (2 * 1) - 1 = 1
+  int scale = max_w * max_w * max_w; // 1 * 1 * 1 = 1
   float w;
 
-  w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);
-  arr(index.x, index.y, index.z) += w * q;
-  grid.count(index.x, index.y, index.z) += w;
-
-  w = (1 - coords.x) * (1 - coords.y) * (coords.z);
-  arr(index.x, index.y, index.z + 1) += w * q;
-  grid.count(index.x, index.y, index.z + 1) += w;
-
-  w = (1 - coords.x) * (coords.y) * (1 - coords.z);
-  arr(index.x, index.y + 1, index.z) += w * q;
-  grid.count(index.x, index.y + 1, index.z) += w;
-
-  w = (1 - coords.x) * (coords.y) * (coords.z);
-  arr(index.x, index.y + 1, index.z + 1) += w * q;
-  grid.count(index.x, index.y + 1, index.z + 1) += w;
-
-  w = (coords.x) * (1 - coords.y) * (1 - coords.z);
-  arr(index.x + 1, index.y, index.z) += w * q;
-  grid.count(index.x + 1, index.y, index.z) += w;
-
-  w = (coords.x) * (1 - coords.y) * (coords.z);
-  arr(index.x + 1, index.y, index.z + 1) += w * q;
-  grid.count(index.x + 1, index.y, index.z + 1) += w;
-
-  w = (coords.x) * (coords.y) * (1 - coords.z);
-  arr(index.x + 1, index.y + 1, index.z) += w * q;
-  grid.count(index.x + 1, index.y + 1, index.z) += w;
-
-  w = (coords.x) * (coords.y) * (coords.z);
-  arr(index.x + 1, index.y + 1, index.z + 1) += w * q;
-  grid.count(index.x + 1, index.y + 1, index.z + 1) += w;
+  for (int i = 1 - range; i <= range; i++) { // {0,1}
+    for (int j = 1 - range; j <= range; j++) {
+      for (int k = 1 - range; k <= range; k++) {
+        if (index.x + i < 0 || index.x + i >= arr.sx || index.y + j < 0 ||
+            index.y + j >= arr.sy || index.z + k < 0 || index.z + k >= arr.sz)
+          continue;
+        w = (max_w - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
+            (max_w - std::fabs(j - coords.y)) * // {""}
+            (max_w - std::fabs(k - coords.z)) * scale;       //{""}
+        arr(index.x + i, index.y + j, index.z + k) += w * q; //{0,1}
+        grid.count(index.x + i, index.y + j, index.z + k) += w;
+      }
+    }
+  }
 }
 
 template <class T>
@@ -284,27 +270,27 @@ glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
   float w;
 
   w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);
-  wv = glm::vec3(-coords.x, -coords.y, -coords.z) ;
+  wv = glm::vec3(-coords.x, -coords.y, -coords.z);
   c += w * wv * field(index.x, index.y, index.z);
 
   w = (1 - coords.x) * (1 - coords.y) * (coords.z);
-  wv = glm::vec3(-coords.x, -coords.y, 1 - coords.z) ;
+  wv = glm::vec3(-coords.x, -coords.y, 1 - coords.z);
   c += w * wv * field(index.x, index.y, index.z + 1);
 
   w = (1 - coords.x) * (coords.y) * (1 - coords.z);
-  wv = glm::vec3(-coords.x, 1 - coords.y, -coords.z) ;
+  wv = glm::vec3(-coords.x, 1 - coords.y, -coords.z);
   c += w * wv * field(index.x, index.y + 1, index.z);
 
   w = (1 - coords.x) * (coords.y) * (coords.z);
-  wv = glm::vec3(-coords.x, 1 - coords.y, 1 - coords.z) ;
+  wv = glm::vec3(-coords.x, 1 - coords.y, 1 - coords.z);
   c += w * wv * field(index.x, index.y + 1, index.z + 1);
 
   w = (coords.x) * (1 - coords.y) * (1 - coords.z);
-  wv = glm::vec3(1 - coords.x, -coords.y, -coords.z) ;
+  wv = glm::vec3(1 - coords.x, -coords.y, -coords.z);
   c += w * wv * field(index.x + 1, index.y, index.z);
 
   w = (coords.x) * (1 - coords.y) * (coords.z);
-  wv = glm::vec3(1 - coords.x, -coords.y, 1 - coords.z) ;
+  wv = glm::vec3(1 - coords.x, -coords.y, 1 - coords.z);
   c += w * wv * field(index.x + 1, index.y, index.z + 1);
 
   w = (coords.x) * (coords.y) * (1 - coords.z);
