@@ -11,6 +11,7 @@
 
 #define DAM_BREAK 0
 #define CENTER_DROP 1
+#define OPPOSITE_CORNERS 2
 
 class Simulation {
 public:
@@ -42,6 +43,7 @@ public:
   void populate_particles();
   void add_dam_break();
   void add_center_drop();
+  void add_opp_corners();
   // auxillary methods
   void step_and_save(float t, std::string fname);
   void advance(float dt);

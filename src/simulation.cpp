@@ -12,22 +12,76 @@
 #define EPS 0.001
 
 void Simulation::populate_particles() {
-  if (example_type == DAM_BREAK) {
-    add_dam_break();
-  } else if (example_type == CENTER_DROP) {
-    add_center_drop();
-  } else {
-    std::cout << "panic" << std::endl;
-  }
-}
-
-// dam break scenario
-void Simulation::add_dam_break() {
   particles.clear();
   cx.clear();
   cy.clear();
   cz.clear();
 
+  if (example_type == DAM_BREAK) {
+    add_dam_break();
+  } else if (example_type == CENTER_DROP) {
+    add_center_drop();
+  } else if (example_type == OPPOSITE_CORNERS) {
+    add_opp_corners();
+  } else {
+    std::cout << "panic" << std::endl;
+  }
+}
+
+void Simulation::add_opp_corners() {
+  for (int x = grid.nx * 0.7; x < grid.nx * 0.95; x++) {
+    for (int y = grid.ny * 0.1; y < grid.ny * 0.8; y++) {
+      for (int z = grid.nz * 0.6; z < grid.nz * 0.95; z++) {
+        // for each cell, add 8 new jittered particles
+        float base_x = x * grid.h;
+        float base_y = y * grid.h;
+        float base_z = z * grid.h;
+        for (int i = 0; i < 8; i++) {
+          float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
+          float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
+          float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
+          // add particles
+          particles.push_back(
+              Particle(glm::vec3(base_x + jitter_x, base_y + jitter_y,
+                                 base_z + jitter_z),
+                       glm::vec3(-5.0f, 0, 0)));
+          // APIC vectors
+          cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+          cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+          cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+        }
+      }
+    }
+  }
+
+  for (int x = grid.nx * 0.05; x < grid.nx * 0.3; x++) {
+    for (int y = grid.ny * 0.1; y < grid.ny * 0.8; y++) {
+      for (int z = grid.nz * 0.05; z < grid.nz * 0.4; z++) {
+        // for each cell, add 8 new jittered particles
+        float base_x = x * grid.h;
+        float base_y = y * grid.h;
+        float base_z = z * grid.h;
+        for (int i = 0; i < 8; i++) {
+          float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
+          float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
+          float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
+          // add particles
+          particles.push_back(
+              Particle(glm::vec3(base_x + jitter_x, base_y + jitter_y,
+                                 base_z + jitter_z),
+                       glm::vec3(5.0f, 0, 0)));
+          // APIC vectors
+          cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+          cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+          cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+        }
+      }
+    }
+  }
+}
+
+// dam break scenario
+void Simulation::add_dam_break() {
   for (int x = grid.nx * 0.75; x < grid.nx * 0.95; x++) {
     for (int y = grid.ny * 0.2; y < grid.ny * 0.8; y++) {
       for (int z = grid.nz * 0.1; z < grid.nz * 0.9; z++) {
@@ -56,11 +110,6 @@ void Simulation::add_dam_break() {
 
 // drop a rectangle into the center of the room
 void Simulation::add_center_drop() {
-  particles.clear();
-  cx.clear();
-  cy.clear();
-  cz.clear();
-
   for (int x = grid.nx * 0.3; x < grid.nx * 0.7; x++) {
     for (int y = grid.ny * 0.2; y < grid.ny * 0.8; y++) {
       for (int z = grid.nz * 0.3; z < grid.nz * 0.7; z++) {

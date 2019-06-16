@@ -45,7 +45,7 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
     gui->update(true);
   } else if (key == GLFW_KEY_MINUS && action == GLFW_RELEASE) {
     std::cout << "cycling example type" << std::endl;
-    gui->simulation.example_type = (gui->simulation.example_type + 1) % 2;
+    gui->simulation.example_type = (gui->simulation.example_type + 1) % 3;
   }
 
   if (action == GLFW_PRESS) {
@@ -78,16 +78,19 @@ int main(int argc, char *argv[]) {
   std::string o;
   int m = 2;
   int x = 0;
+  int r = 30;
 
-  // -g to enable graphical mode
-  // -t to set a time limit
-  // -e to export files
-  // -a to export each frame
-  // -o to set output directory
-  // -m to set mode (1 pic, 2 pic/flip, 3 apic)
-  // -x to choose example type (1 dam break, 2 center drop)
+  std::string help_text = "  -g to enable graphical mode\n\
+  -t to set a time limit (for non graphical mode)\n\
+  -e to export files (for non-graphical mode)\n\
+  -a to export each frame (for non-graphical mode)\n\
+  -o to set output filename (to be created in the out/ directory)\n\
+  -m to set mode (1 pic, 2 pic/flip, 3 apic)\n\
+  -x to choose example type (1 dam break, 2 center drop, 3 for opposing corners)\n\
+  -r to set grid resolution (default 30)\n\
+  -h to display help text\n";
 
-  while ((opt = getopt(argc, argv, "t:o:m:x:gea")) != -1) {
+  while ((opt = getopt(argc, argv, "t:o:m:x:r:geah")) != -1) {
     switch (opt) {
     case 'g':
       g = true;
@@ -117,6 +120,14 @@ int main(int argc, char *argv[]) {
     case 'x':
       x = std::atoi(optarg) - 1;
       std::cout << ":: example type set to " << x << std::endl;
+      break;
+    case 'r':
+      r = std::atoi(optarg);
+      std::cout << ":: grid resolution set to " << r << std::endl;
+      break;
+    case 'h':
+      std::cout << help_text;
+      return 0;
     }
   }
 
@@ -141,8 +152,7 @@ int main(int argc, char *argv[]) {
     glfwSetCursorPosCallback(window, MousePosCallback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
-    int grid_res = 30;
-    gui.init(2.0f, grid_res, grid_res, grid_res, x);
+    gui.init(2.0f, r, r, r, x);
     gui.simulation.mode = m;
 
     while (!glfwWindowShouldClose(window)) {
@@ -155,9 +165,9 @@ int main(int argc, char *argv[]) {
   else {
     Simulation sim;
     sim.mode = m;
-    int grid_res = 50;
+    sim.example_type = x;
     std::cout << ":: initializing grid" << std::endl;
-    sim.init(2.0f, grid_res, grid_res, grid_res);
+    sim.init(2.0f, r, r, r);
     std::cout << ":: initializing particles" << std::endl;
     sim.populate_particles();
     std::cout << ":: " << sim.particles.size() << " particles added"
