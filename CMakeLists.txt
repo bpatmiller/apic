@@ -31,6 +31,13 @@ FIND_PACKAGE(glm 0.9.8.0 QUIET)
 INCLUDE_DIRECTORIES(${glm_INCLUDE_DIR})
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL -DGLM_FORCE_SIZE_FUNC=1 -DGLM_FORCE_RADIANS=1)
 
+# OPENVDB
+set (openvdb_dir ${CMAKE_SOURCE_DIR}/lib/openvdb-6.0.0)
+add_library(openvdb ${openvdb_dir}/openvdb/openvdb.cc)
+target_include_directories(openvdb PRIVATE ${openvdb_dir}/openvdb)
+target_include_directories(${PROJECT_NAME} PRIVATE ${openvdb_dir}/openvdb)
+target_link_libraries(${PROJECT_NAME} openvdb dl)
+
 # GLAD
 set(glad_dir ${CMAKE_SOURCE_DIR}/lib/glad)
 add_library(glad ${glad_dir}/src/glad.c)
