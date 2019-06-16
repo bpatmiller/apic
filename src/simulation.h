@@ -19,6 +19,7 @@ public:
 
   int mode = APIC_MODE;
   float flip_blend = 0.95f;
+  int range = 1; // trilinear interpolation distance
 
   Simulation(){};
 

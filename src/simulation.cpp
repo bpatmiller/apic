@@ -117,7 +117,6 @@ void Simulation::position_to_grid(glm::vec3 p, glm::vec3 offset,
 template <class T>
 void Simulation::grid_add_quantities(T &arr, float q, glm::ivec3 index,
                                      glm::vec3 coords) {
-  int range = 1;
   int max_w = (2 * range) - 1;       // (2 * 1) - 1 = 1
   int scale = max_w * max_w * max_w; // 1 * 1 * 1 = 1
   float w;
@@ -141,41 +140,26 @@ void Simulation::grid_add_quantities(T &arr, float q, glm::ivec3 index,
 template <class T>
 void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
                             glm::vec3 coords) {
+  
+  int max_w = (2 * range) - 1;       // (2 * 1) - 1 = 1
+  int scale = max_w * max_w * max_w; // 1 * 1 * 1 = 1
   float w;
   float coef;
 
-  w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);
-  coef = glm::dot(c, glm::vec3(-coords.x, -coords.y, -coords.z) * grid.h);
-  accum(index.x, index.y, index.z) += w * coef;
-
-  w = (1 - coords.x) * (1 - coords.y) * (coords.z);
-  coef = glm::dot(c, glm::vec3(-coords.x, -coords.y, 1 - coords.z) * grid.h);
-  accum(index.x, index.y, index.z + 1) += w * coef;
-
-  w = (1 - coords.x) * (coords.y) * (1 - coords.z);
-  coef = glm::dot(c, glm::vec3(-coords.x, 1 - coords.y, -coords.z) * grid.h);
-  accum(index.x, index.y + 1, index.z) += w * coef;
-
-  w = (1 - coords.x) * (coords.y) * (coords.z);
-  coef = glm::dot(c, glm::vec3(-coords.x, 1 - coords.y, 1 - coords.z) * grid.h);
-  accum(index.x, index.y + 1, index.z + 1) += w * coef;
-
-  w = (coords.x) * (1 - coords.y) * (1 - coords.z);
-  coef = glm::dot(c, glm::vec3(1 - coords.x, -coords.y, -coords.z) * grid.h);
-  accum(index.x + 1, index.y, index.z) += w * coef;
-
-  w = (coords.x) * (1 - coords.y) * (coords.z);
-  coef = glm::dot(c, glm::vec3(1 - coords.x, -coords.y, 1 - coords.z) * grid.h);
-  accum(index.x + 1, index.y, index.z + 1) += w * coef;
-
-  w = (coords.x) * (coords.y) * (1 - coords.z);
-  coef = glm::dot(c, glm::vec3(1 - coords.x, 1 - coords.y, -coords.z) * grid.h);
-  accum(index.x + 1, index.y + 1, index.z) += w * coef;
-
-  w = (coords.x) * (coords.y) * (coords.z);
-  coef =
-      glm::dot(c, glm::vec3(1 - coords.x, 1 - coords.y, 1 - coords.z) * grid.h);
-  accum(index.x + 1, index.y + 1, index.z + 1) += w * coef;
+  for (int i = 1 - range; i <= range; i++) { // {0,1}
+    for (int j = 1 - range; j <= range; j++) {
+      for (int k = 1 - range; k <= range; k++) {
+        if (index.x + i < 0 || index.x + i >= accum.sx || index.y + j < 0 ||
+            index.y + j >= accum.sy || index.z + k < 0 || index.z + k >= accum.sz)
+          continue;
+        w = (max_w - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
+            (max_w - std::fabs(j - coords.y)) * // {""}
+            (max_w - std::fabs(k - coords.z)) * scale;       //{""}
+        coef = glm::dot(c, glm::vec3(i-coords.x, j-coords.y, k-coords.z) * grid.h);
+        accum(index.x + i, index.y + j, index.z + k) += w * coef; //{0,1}
+      }
+    }
+  }
 }
 
 // for each particle, trilinearly interpolate velocity
