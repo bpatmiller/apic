@@ -19,7 +19,6 @@ public:
 
   int mode = APIC_MODE;
   float flip_blend = 0.95f;
-  int range = 1; // range for neighboring cells
 
   Simulation(){};
 
@@ -32,18 +31,22 @@ public:
     grid.reset();
   };
 
+  // io methods
   void save_particles(std::string fname);
   void save_voxels(std::string fname);
-  void step_and_save(float t, std::string fname);
+  // particle init methods
   void add_particle_box();
+  void add_dam_break();
+  // auxillary methods
+  void step_and_save(float t, std::string fname);
+  void advance(float dt);
+  void step_frame(float time);
+  // simulation methods
   void particles_to_grid();
   void save_velocities();
   void grid_to_particles();
   void advect(float dt);
-  void advance(float dt);
-  void step_frame(float time);
   void mark_cells();
-
   // helper functions
   void position_to_grid(glm::vec3 p, glm::vec3 offset, glm::ivec3 &index,
                         glm::vec3 &coords);
@@ -51,7 +54,6 @@ public:
   void grid_add_quantities(T &arr, float q, glm::ivec3 index, glm::vec3 coords);
   glm::vec3 trilerp_uvw(glm::vec3 p);
   glm::vec3 trilerp_dudvdw(glm::vec3 p);
-
   // APIC functions
   template <class T>
   void affine_set(T &accum, glm::vec3 c, glm::ivec3 index, glm::vec3 coords);

@@ -11,9 +11,16 @@
 
 #define EPS 0.001
 
-// initialize "dam break" scenario
+// dam break scenario
+void Simulation::add_dam_break() {}
+
+// drop a rectangle into the center of the room
 void Simulation::add_particle_box() {
   particles.clear();
+  cx.clear();
+  cy.clear();
+  cz.clear();
+  
   for (int x = grid.nx * 0.3; x < grid.nx * 0.7; x++) {
     for (int y = grid.ny * 0.2; y < grid.ny * 0.8; y++) {
       for (int z = grid.nz * 0.3; z < grid.nz * 0.7; z++) {
@@ -115,19 +122,12 @@ void Simulation::position_to_grid(glm::vec3 p, glm::vec3 offset,
 template <class T>
 void Simulation::grid_add_quantities(T &arr, float q, glm::ivec3 index,
                                      glm::vec3 coords) {
-  int max_w = (2 * range) - 1;                         // (2 * 1) - 1 = 1
-  float scale = 1.0f / (float)(max_w * max_w * max_w); // 1 * 1 * 1 = 1
-  float w;
-
-  for (int i = 1 - range; i <= range; i++) { // {0,1}
-    for (int j = 1 - range; j <= range; j++) {
-      for (int k = 1 - range; k <= range; k++) {
-        if (index.x + i < 0 || index.x + i >= arr.sx || index.y + j < 0 ||
-            index.y + j >= arr.sy || index.z + k < 0 || index.z + k >= arr.sz)
-          continue;
-        w = (max_w - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
-            (max_w - std::fabs(j - coords.y)) * // {""}
-            (max_w - std::fabs(k - coords.z)) * scale;       //{""}
+  for (int i = 0; i <= 1; i++) { // {0,1}
+    for (int j = 0; j <= 1; j++) {
+      for (int k = 0; k <= 1; k++) {
+        float w = (1 - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
+                  (1 - std::fabs(j - coords.y)) * // {""}
+                  (1 - std::fabs(k - coords.z));  //{""}
         arr(index.x + i, index.y + j, index.z + k) += w * q; //{0,1}
         grid.count(index.x + i, index.y + j, index.z + k) += w;
       }
@@ -138,25 +138,14 @@ void Simulation::grid_add_quantities(T &arr, float q, glm::ivec3 index,
 template <class T>
 void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
                             glm::vec3 coords) {
-
-  int aff_rng = 1;
-  int max_w = (2 * aff_rng) - 1;                       // (2 * 1) - 1 = 1
-  float scale = 1.0f / (float)(max_w * max_w * max_w); // 1 * 1 * 1 = 1
-  float w;
-  float coef;
-
-  for (int i = 1 - aff_rng; i <= aff_rng; i++) { // {0,1}
-    for (int j = 1 - aff_rng; j <= aff_rng; j++) {
-      for (int k = 1 - aff_rng; k <= aff_rng; k++) {
-        if (index.x + i < 0 || index.x + i >= accum.sx || index.y + j < 0 ||
-            index.y + j >= accum.sy || index.z + k < 0 ||
-            index.z + k >= accum.sz)
-          continue;
-        w = (max_w - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
-            (max_w - std::fabs(j - coords.y)) * // {""}
-            (max_w - std::fabs(k - coords.z)) * scale; //{""}
-        coef = glm::dot(c, glm::vec3(i - coords.x, j - coords.y, k - coords.z) *
-                               grid.h);
+  for (int i = 0; i <= 1; i++) { // {0,1}
+    for (int j = 0; j <= 1; j++) {
+      for (int k = 0; k <= 1; k++) {
+        float w = (1 - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
+                  (1 - std::fabs(j - coords.y)) * // {""}
+                  (1 - std::fabs(k - coords.z));  //{""}
+        float coef = glm::dot(
+            c, glm::vec3(i - coords.x, j - coords.y, k - coords.z) * grid.h);
         accum(index.x + i, index.y + j, index.z + k) += w * coef; //{0,1}
       }
     }
@@ -166,16 +155,6 @@ void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
 // for each particle, trilinearly interpolate velocity
 // to all grid points nearby
 void Simulation::particles_to_grid() {
-  // density
-  grid.rho.clear();
-  for (uint i = 0; i < particles.size(); i++) {
-    Particle &p = particles[i];
-    glm::ivec3 index;
-    glm::vec3 coords;
-    position_to_grid(p.position, glm::vec3(0.5f, 0.5f, 0.5f), index, coords);
-    grid_add_quantities(grid.rho, 1.0, index, coords);
-  }
-
   // u
   grid.u.clear();
   grid.count.clear();
@@ -250,23 +229,15 @@ void Simulation::particles_to_grid() {
 // return gradient of weighted field
 glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
                                 glm::vec3 coords) {
-  int aff_rng = 1;
-  int max_w = (2 * aff_rng) - 1;                       // (2 * 1) - 1 = 1
-  float scale = 1.0f / (float)(max_w * max_w * max_w); // 1 * 1 * 1 = 1
-  float w;
   glm::vec3 wv;
   glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
 
-  for (int i = 1 - aff_rng; i <= aff_rng; i++) { // {0,1}
-    for (int j = 1 - aff_rng; j <= aff_rng; j++) {
-      for (int k = 1 - aff_rng; k <= aff_rng; k++) {
-        if (index.x + i < 0 || index.x + i >= field.sx || index.y + j < 0 ||
-            index.y + j >= field.sy || index.z + k < 0 ||
-            index.z + k >= field.sz)
-          continue;
-        w = (max_w - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
-            (max_w - std::fabs(j - coords.y)) * // {""}
-            (max_w - std::fabs(k - coords.z)) * scale; //{""}
+  for (int i = 0; i <= 1; i++) { // {0,1}
+    for (int j = 0; j <= 1; j++) {
+      for (int k = 0; k <= 1; k++) {
+        float w = (1 - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
+                  (1 - std::fabs(j - coords.y)) * // {""}
+                  (1 - std::fabs(k - coords.z));  //{""}
         wv = glm::vec3(i - coords.x, j - coords.y, k - coords.z) * grid.h;
         c += w * wv * field(index.x + i, index.y + j, index.z + k);
       }

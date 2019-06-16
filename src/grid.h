@@ -25,7 +25,6 @@ public:
   Array3i marker;     // air, fluid, solid
   Array3f phi;        // signed distances
   Array3d pressure;   // self explanatory
-  Array3f rho;        // density
   Array3d r;          // divergence
   Array3i fl_index;   // gives each fluid cell an index
 
@@ -59,7 +58,6 @@ public:
     marker.init(nx, ny, nz);
     phi.init(nx, ny, nz);
     pressure.init(nx, ny, nz);
-    rho.init(nx, ny, nz);
     r.init(nx, ny, nz);
     fl_index.init(nx, ny, nz);
   }
@@ -76,7 +74,6 @@ public:
     marker.clear();
     phi.clear();
     pressure.clear();
-    rho.clear();
     r.clear();
     fl_index.clear();
   }
