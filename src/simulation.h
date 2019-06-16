@@ -9,6 +9,9 @@
 #define PIC_FLIP_MODE 1
 #define APIC_MODE 2
 
+#define DAM_BREAK 0
+#define CENTER_DROP 1
+
 class Simulation {
 public:
   Grid grid;
@@ -18,6 +21,7 @@ public:
   std::vector<glm::vec3> cz;
 
   int mode = APIC_MODE;
+  int example_type = DAM_BREAK;
   float flip_blend = 0.95f;
 
   Simulation(){};
@@ -27,7 +31,7 @@ public:
   }
 
   void reset() {
-    add_particle_box();
+    populate_particles();
     grid.reset();
   };
 
@@ -35,8 +39,9 @@ public:
   void save_particles(std::string fname);
   void save_voxels(std::string fname);
   // particle init methods
-  void add_particle_box();
+  void populate_particles();
   void add_dam_break();
+  void add_center_drop();
   // auxillary methods
   void step_and_save(float t, std::string fname);
   void advance(float dt);

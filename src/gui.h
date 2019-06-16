@@ -11,7 +11,7 @@
 class GUI {
 public:
   GUI(GLFWwindow *w) { window = w; }
-  void init(float lx_, int nx_, int ny_, int nz_);
+  void init(float lx_, int nx_, int ny_, int nz_, int x);
   void update(bool force);
   void update();
   void update_camera();

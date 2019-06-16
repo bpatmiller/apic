@@ -43,6 +43,9 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
     gui->simulation.reset();
     // manually update one frame
     gui->update(true);
+  } else if (key == GLFW_KEY_MINUS && action == GLFW_RELEASE) {
+    std::cout << "cycling example type" << std::endl;
+    gui->simulation.example_type = (gui->simulation.example_type + 1) % 2;
   }
 
   if (action == GLFW_PRESS) {
@@ -74,6 +77,7 @@ int main(int argc, char *argv[]) {
   bool a = false;
   std::string o;
   int m = 2;
+  int x = 0;
 
   // -g to enable graphical mode
   // -t to set a time limit
@@ -81,8 +85,9 @@ int main(int argc, char *argv[]) {
   // -a to export each frame
   // -o to set output directory
   // -m to set mode (1 pic, 2 pic/flip, 3 apic)
+  // -x to choose example type (1 dam break, 2 center drop)
 
-  while ((opt = getopt(argc, argv, "t:o:m:gea")) != -1) {
+  while ((opt = getopt(argc, argv, "t:o:m:x:gea")) != -1) {
     switch (opt) {
     case 'g':
       g = true;
@@ -106,9 +111,12 @@ int main(int argc, char *argv[]) {
       std::cout << ":: output filename set to " << o << std::endl;
       break;
     case 'm':
-      m = std::atoi(optarg);
+      m = std::atoi(optarg) - 1;
       std::cout << ":: mode set to " << m << std::endl;
       break;
+    case 'x':
+      x = std::atoi(optarg) - 1;
+      std::cout << ":: example type set to " << x << std::endl;
     }
   }
 
@@ -134,8 +142,9 @@ int main(int argc, char *argv[]) {
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
     int grid_res = 30;
-    gui.init(2.0f, grid_res, grid_res, grid_res);
+    gui.init(2.0f, grid_res, grid_res, grid_res, x);
     gui.simulation.mode = m;
+
     while (!glfwWindowShouldClose(window)) {
       gui.update();
       glfwSwapBuffers(window);
@@ -150,7 +159,7 @@ int main(int argc, char *argv[]) {
     std::cout << ":: initializing grid" << std::endl;
     sim.init(2.0f, grid_res, grid_res, grid_res);
     std::cout << ":: initializing particles" << std::endl;
-    sim.add_particle_box();
+    sim.populate_particles();
     std::cout << ":: " << sim.particles.size() << " particles added"
               << std::endl;
     std::cout << ":: running simulation" << std::endl;

@@ -28,10 +28,11 @@ void GUI::create_sphere(float Radius, std::vector<glm::vec3> &s_vertices) {
   }
 }
 
-void GUI::init(float lx_, int nx_, int ny_, int nz_) {
+void GUI::init(float lx_, int nx_, int ny_, int nz_, int x) {
   // set up simulation
   simulation.init(lx_, nx_, ny_, nz_);
-  simulation.add_particle_box();
+  simulation.example_type = x;
+  simulation.populate_particles();
   std::cout << "running apic simulation with " << simulation.particles.size()
             << " particles" << std::endl;
 
