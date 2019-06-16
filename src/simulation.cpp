@@ -14,9 +14,9 @@
 // initialize "dam break" scenario
 void Simulation::add_particle_box() {
   particles.clear();
-  for (int x = grid.nx * 0.4; x < grid.nx * 0.6; x++) {
-    for (int y = grid.ny * 0.2; y < grid.ny * 0.6; y++) {
-      for (int z = grid.nz * 0.4; z < grid.nz * 0.6; z++) {
+  for (int x = grid.nx * 0.3; x < grid.nx * 0.7; x++) {
+    for (int y = grid.ny * 0.2; y < grid.ny * 0.8; y++) {
+      for (int z = grid.nz * 0.3; z < grid.nz * 0.7; z++) {
         // for each cell, add 8 new jittered particles
         float base_x = x * grid.h;
         float base_y = y * grid.h;
@@ -29,7 +29,7 @@ void Simulation::add_particle_box() {
           particles.push_back(
               Particle(glm::vec3(base_x + jitter_x, base_y + jitter_y,
                                  base_z + jitter_z),
-                       glm::vec3(0, -10.0f, 0)));
+                       glm::vec3(0, 0, 0)));
           // APIC vectors
           cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
           cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -61,7 +61,6 @@ glm::vec3 Simulation::trilerp_uvw(glm::vec3 p) {
   // w
   position_to_grid(p, W_OFFSET, index, coords);
   result.z = grid.w.trilerp(index, coords);
-
   return result;
 }
 
@@ -78,7 +77,6 @@ glm::vec3 Simulation::trilerp_dudvdw(glm::vec3 p) {
   // w
   position_to_grid(p, W_OFFSET, index, coords);
   result.z = grid.dw.trilerp(index, coords);
-
   return result;
 }
 
@@ -117,8 +115,8 @@ void Simulation::position_to_grid(glm::vec3 p, glm::vec3 offset,
 template <class T>
 void Simulation::grid_add_quantities(T &arr, float q, glm::ivec3 index,
                                      glm::vec3 coords) {
-  int max_w = (2 * range) - 1;       // (2 * 1) - 1 = 1
-  int scale = max_w * max_w * max_w; // 1 * 1 * 1 = 1
+  int max_w = (2 * range) - 1;                         // (2 * 1) - 1 = 1
+  float scale = 1.0f / (float)(max_w * max_w * max_w); // 1 * 1 * 1 = 1
   float w;
 
   for (int i = 1 - range; i <= range; i++) { // {0,1}
@@ -141,14 +139,15 @@ template <class T>
 void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
                             glm::vec3 coords) {
 
-  int max_w = (2 * range) - 1;       // (2 * 1) - 1 = 1
-  int scale = max_w * max_w * max_w; // 1 * 1 * 1 = 1
+  int aff_rng = 1;
+  int max_w = (2 * aff_rng) - 1;                       // (2 * 1) - 1 = 1
+  float scale = 1.0f / (float)(max_w * max_w * max_w); // 1 * 1 * 1 = 1
   float w;
   float coef;
 
-  for (int i = 1 - range; i <= range; i++) { // {0,1}
-    for (int j = 1 - range; j <= range; j++) {
-      for (int k = 1 - range; k <= range; k++) {
+  for (int i = 1 - aff_rng; i <= aff_rng; i++) { // {0,1}
+    for (int j = 1 - aff_rng; j <= aff_rng; j++) {
+      for (int k = 1 - aff_rng; k <= aff_rng; k++) {
         if (index.x + i < 0 || index.x + i >= accum.sx || index.y + j < 0 ||
             index.y + j >= accum.sy || index.z + k < 0 ||
             index.z + k >= accum.sz)
@@ -251,15 +250,16 @@ void Simulation::particles_to_grid() {
 // return gradient of weighted field
 glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
                                 glm::vec3 coords) {
-  int max_w = (2 * range) - 1;       // (2 * 1) - 1 = 1
-  int scale = max_w * max_w * max_w; // 1 * 1 * 1 = 1
+  int aff_rng = 1;
+  int max_w = (2 * aff_rng) - 1;                       // (2 * 1) - 1 = 1
+  float scale = 1.0f / (float)(max_w * max_w * max_w); // 1 * 1 * 1 = 1
   float w;
   glm::vec3 wv;
   glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
 
-  for (int i = 1 - range; i <= range; i++) { // {0,1}
-    for (int j = 1 - range; j <= range; j++) {
-      for (int k = 1 - range; k <= range; k++) {
+  for (int i = 1 - aff_rng; i <= aff_rng; i++) { // {0,1}
+    for (int j = 1 - aff_rng; j <= aff_rng; j++) {
+      for (int k = 1 - aff_rng; k <= aff_rng; k++) {
         if (index.x + i < 0 || index.x + i >= field.sx || index.y + j < 0 ||
             index.y + j >= field.sy || index.z + k < 0 ||
             index.z + k >= field.sz)

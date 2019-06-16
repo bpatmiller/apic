@@ -76,6 +76,28 @@ template <class T> struct Array3 {
     std::memcpy(other.data, data, other.size * sizeof(T));
   }
 
+  T trilerp(glm::ivec3 index, glm::vec3 coords, int range) {
+    int max_w = (2 * range) - 1;                         // (2 * 1) - 1 = 1
+    float scale = 1.0f / (float)(max_w * max_w * max_w); // 1 * 1 * 1 = 1
+    T sum = 0;
+    float w;
+
+    for (int i = 1 - range; i <= range; i++) { // {0,1}
+      for (int j = 1 - range; j <= range; j++) {
+        for (int k = 1 - range; k <= range; k++) {
+          if (index.x + i < 0 || index.x + i >= sx || index.y + j < 0 ||
+              index.y + j >= sy || index.z + k < 0 || index.z + k >= sz)
+            continue;
+          w = (max_w - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
+              (max_w - std::fabs(j - coords.y)) * // {""}
+              (max_w - std::fabs(k - coords.z)) * scale; //{""}
+          sum += (*this)(index.x + i, index.y + j, index.z + k) * w;
+        }
+      }
+    }
+    return sum;
+  }
+
   // index (i,j,k cell index), coords (0-1f uv coords)
   T trilerp(glm::ivec3 index, glm::vec3 coords) {
     return (1 - coords.x) * (1 - coords.y) * (1 - coords.z) *
