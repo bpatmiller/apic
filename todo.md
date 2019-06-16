@@ -11,7 +11,16 @@
 -switch to eigen for pressure solve
 
 ## todo
-fix boundary conditions (clinging)
+-getopt
+    -g to enable graphical mode
+    -t to set a time limit
+    -e to export files
+    -a to export each frame
+    -o to set output directory
+
+-load solid/fluid files
+    -improve cell marking
+-fix boundary conditions (clinging)
 
 ## further work
 -set up partio

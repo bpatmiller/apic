@@ -1,4 +1,5 @@
 #include "simulation.h"
+#include <fstream>
 #include <glm/gtc/random.hpp>
 #include <glm/gtx/common.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -13,9 +14,9 @@
 // initialize "dam break" scenario
 void Simulation::add_particle_box() {
   particles.clear();
-  for (int x = grid.nx * 0.5; x < grid.nx - 2; x++) {
-    for (int y = grid.ny * 0.1; y < grid.ny - 2; y++) {
-      for (int z = grid.nz * 0.5; z < grid.nz - 2; z++) {
+  for (int x = grid.nx * 0.4; x < grid.nx * 0.6; x++) {
+    for (int y = grid.ny * 0.2; y < grid.ny * 0.6; y++) {
+      for (int z = grid.nz * 0.4; z < grid.nz * 0.6; z++) {
         // for each cell, add 8 new jittered particles
         float base_x = x * grid.h;
         float base_y = y * grid.h;
@@ -334,10 +335,8 @@ void Simulation::grid_to_particles() {
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
     if (mode == PIC_FLIP_MODE) {
-      p.velocity =
-          (flip_blend * trilerp_uvw(p.position)) +
-          (1.0f - flip_blend) * (p.velocity + trilerp_dudvdw(p.position));
-
+      p.velocity = (1.0f - flip_blend) * trilerp_uvw(p.position) +
+                   flip_blend * (p.velocity + trilerp_dudvdw(p.position));
     } else {
       p.velocity = trilerp_uvw(p.position);
       if (mode == APIC_MODE) {
@@ -439,11 +438,75 @@ void Simulation::step_frame(float time) {
   float t = 0;
   float dt;
   while (t < time) {
-    dt = grid.CFL();
+    dt = std::fmin(grid.CFL(), 0.1f);
     if (t + dt >= time) {
       dt = time - t;
     }
     advance(dt);
     t += dt;
+  }
+}
+
+void Simulation::save_particles(std::string fname) {
+  std::ofstream ofile(std::string("out/p_") + fname);
+  // header
+  ofile << "ply\n";
+  ofile << "format ascii 1.0\n";
+  ofile << "element vertex " << particles.size() << "\n";
+  ofile << "property float x\n";
+  ofile << "property float y\n";
+  ofile << "property float z\n";
+  ofile << "end_header\n";
+
+  for (auto &p : particles) {
+    ofile << p.position.x << " " << p.position.z << " " << p.position.y <<
+    "\n";
+  }
+  ofile.close();
+  std::cout << "   saved " << std::string("out/") + fname << std::endl;
+}
+
+void Simulation::save_voxels(std::string fname) {
+  std::ofstream ofile(std::string("out/") + fname);
+  int n =0;
+  for (int x=0; x<grid.marker.size; x++) {
+    if (grid.marker.data[x] == FLUID_CELL) n++;
+  }
+  // header
+  ofile << "ply\n";
+  ofile << "format ascii 1.0\n";
+  ofile << "element vertex " << n << "\n";
+  ofile << "property float x\n";
+  ofile << "property float y\n";
+  ofile << "property float z\n";
+  ofile << "end_header\n";
+
+  for (int i = 0; i < grid.marker.sx; i++) {
+    for (int j = 0; j < grid.marker.sy; j++) {
+      for (int k = 0; k < grid.marker.sz; k++) {
+        if (grid.marker(i, j, k) == FLUID_CELL)
+          ofile << i * grid.h << " " << k * grid.h << " " << j * grid.h << "\n";
+      }
+    }
+  }
+  ofile.close();
+  std::cout << "   saved " << std::string("out/") + fname << std::endl;
+}
+
+void Simulation::step_and_save(float t, std::string fname) {
+  float tm = 0.0f;
+  float tstep = 0.05f;
+  while (tm + tstep < t) {
+    tm += tstep;
+    std::cout << "   t: " << tm << std::endl;
+    step_frame(tstep);
+    save_particles(fname + std::string("_") + std::to_string(tm) +
+                   std::string(".ply"));
+  }
+  if (tm < t) {
+    std::cout << "   t: " << t << std::endl;
+    step_frame(t - tm);
+    save_particles(fname + std::string("_") + std::to_string(t) +
+                std::string(".ply"));
   }
 }

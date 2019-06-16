@@ -18,7 +18,7 @@ public:
   std::vector<glm::vec3> cz;
 
   int mode = APIC_MODE;
-  float flip_blend = 0.9f;
+  float flip_blend = 0.95f;
 
   Simulation(){};
 
@@ -31,6 +31,9 @@ public:
     grid.reset();
   };
 
+  void save_particles(std::string fname);
+  void save_voxels(std::string fname);
+  void step_and_save(float t, std::string fname);
   void add_particle_box();
   void particles_to_grid();
   void save_velocities();
