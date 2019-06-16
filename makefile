@@ -15,5 +15,5 @@ clean:
 
 .PHONY: run
 run:
-	build/bin/apic
+	build/bin/apic -g
 

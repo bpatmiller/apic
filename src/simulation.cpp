@@ -280,42 +280,42 @@ void Simulation::particles_to_grid() {
 glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
                                 glm::vec3 coords) {
   glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
-  glm::vec3 wv = glm::vec3(0.0f, 0.0f, 0.0f);
+  glm::vec3 wv;
   float w;
 
   w = (1 - coords.x) * (1 - coords.y) * (1 - coords.z);
-  wv = glm::vec3(-coords.x, -coords.y, -coords.z) * grid.h;
+  wv = glm::vec3(-coords.x, -coords.y, -coords.z) ;
   c += w * wv * field(index.x, index.y, index.z);
 
   w = (1 - coords.x) * (1 - coords.y) * (coords.z);
-  wv = glm::vec3(-coords.x, -coords.y, 1 - coords.z) * grid.h;
+  wv = glm::vec3(-coords.x, -coords.y, 1 - coords.z) ;
   c += w * wv * field(index.x, index.y, index.z + 1);
 
   w = (1 - coords.x) * (coords.y) * (1 - coords.z);
-  wv = glm::vec3(-coords.x, 1 - coords.y, -coords.z) * grid.h;
+  wv = glm::vec3(-coords.x, 1 - coords.y, -coords.z) ;
   c += w * wv * field(index.x, index.y + 1, index.z);
 
   w = (1 - coords.x) * (coords.y) * (coords.z);
-  wv = glm::vec3(-coords.x, 1 - coords.y, 1 - coords.z) * grid.h;
+  wv = glm::vec3(-coords.x, 1 - coords.y, 1 - coords.z) ;
   c += w * wv * field(index.x, index.y + 1, index.z + 1);
 
   w = (coords.x) * (1 - coords.y) * (1 - coords.z);
-  wv = glm::vec3(1 - coords.x, -coords.y, -coords.z) * grid.h;
+  wv = glm::vec3(1 - coords.x, -coords.y, -coords.z) ;
   c += w * wv * field(index.x + 1, index.y, index.z);
 
   w = (coords.x) * (1 - coords.y) * (coords.z);
-  wv = glm::vec3(1 - coords.x, -coords.y, 1 - coords.z) * grid.h;
+  wv = glm::vec3(1 - coords.x, -coords.y, 1 - coords.z) ;
   c += w * wv * field(index.x + 1, index.y, index.z + 1);
 
   w = (coords.x) * (coords.y) * (1 - coords.z);
-  wv = glm::vec3(1 - coords.x, 1 - coords.y, -coords.z) * grid.h;
+  wv = glm::vec3(1 - coords.x, 1 - coords.y, -coords.z);
   c += w * wv * field(index.x + 1, index.y + 1, index.z);
 
   w = (coords.x) * (coords.y) * (coords.z);
-  wv = glm::vec3(1 - coords.x, 1 - coords.y, 1 - coords.z) * grid.h;
+  wv = glm::vec3(1 - coords.x, 1 - coords.y, 1 - coords.z);
   c += w * wv * field(index.x + 1, index.y + 1, index.z + 1);
 
-  return c / grid.h;
+  return c * grid.h;
 }
 
 void Simulation::grid_to_particles() {
@@ -438,7 +438,7 @@ void Simulation::step_frame(float time) {
   float t = 0;
   float dt;
   while (t < time) {
-    dt = std::fmin(grid.CFL(), 0.1f);
+    dt = std::fmin(grid.CFL(), 0.05f);
     if (t + dt >= time) {
       dt = time - t;
     }
@@ -459,8 +459,7 @@ void Simulation::save_particles(std::string fname) {
   ofile << "end_header\n";
 
   for (auto &p : particles) {
-    ofile << p.position.x << " " << p.position.z << " " << p.position.y <<
-    "\n";
+    ofile << p.position.x << " " << p.position.z << " " << p.position.y << "\n";
   }
   ofile.close();
   std::cout << "   saved " << std::string("out/") + fname << std::endl;
@@ -468,9 +467,10 @@ void Simulation::save_particles(std::string fname) {
 
 void Simulation::save_voxels(std::string fname) {
   std::ofstream ofile(std::string("out/") + fname);
-  int n =0;
-  for (int x=0; x<grid.marker.size; x++) {
-    if (grid.marker.data[x] == FLUID_CELL) n++;
+  int n = 0;
+  for (int x = 0; x < grid.marker.size; x++) {
+    if (grid.marker.data[x] == FLUID_CELL)
+      n++;
   }
   // header
   ofile << "ply\n";
@@ -507,6 +507,6 @@ void Simulation::step_and_save(float t, std::string fname) {
     std::cout << "   t: " << t << std::endl;
     step_frame(t - tm);
     save_particles(fname + std::string("_") + std::to_string(t) +
-                std::string(".ply"));
+                   std::string(".ply"));
   }
 }
