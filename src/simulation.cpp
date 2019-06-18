@@ -505,20 +505,43 @@ void Simulation::save_voxels(std::string fname) {
   std::cout << "   saved " << std::string("out/") + fname << std::endl;
 }
 
+void Simulation::save_mesh(std::string fname) {
+  std::ofstream ofile(std::string("out/m_") + fname);
+  int tri_count = indices.size();
+
+  ofile << "ply\n";
+  ofile << "format ascii 1.0\n";
+  ofile << "element vertex " << vertices.size() << "\n";
+  ofile << "property float x\n";
+  ofile << "property float y\n";
+  ofile << "property float z\n";
+  ofile << "element face " << indices.size() << "\n";
+  ofile << "property list uchar int vertex_index\n";
+  ofile << "end_header\n";
+
+  for (auto &v : vertices) {
+    ofile << v.x << " " << v.z << " " << v.y << "\n";
+  }
+  for (auto &i : indices) {
+    ofile << "3 " << i.x << " " << i.y << " " << i.z << "\n";
+  }
+
+  ofile.close();
+  std::cout << "saved out/m_" << fname << " containing " << vertices.size()
+            << " vertices\n";
+}
+
 void Simulation::step_and_save(float t, std::string fname) {
   float tm = 0.0f;
   float tstep = 0.05f;
-  while (tm + tstep < t) {
+  while (tm < t) {
+    if (tm + tstep > t)
+      tstep = t - tm;
     tm += tstep;
     std::cout << "   t: " << tm << std::endl;
     step_frame(tstep);
-    save_particles(fname + std::string("_") + std::to_string(tm) +
-                   std::string(".ply"));
-  }
-  if (tm < t) {
-    std::cout << "   t: " << t << std::endl;
-    step_frame(t - tm);
-    save_particles(fname + std::string("_") + std::to_string(t) +
+    generate_mesh();
+    save_mesh(fname + std::string("_") + std::to_string(tm) +
                    std::string(".ply"));
   }
 }
