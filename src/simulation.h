@@ -15,15 +15,19 @@
 
 class Simulation {
 public:
+  // data
   Grid grid;
   std::vector<Particle> particles;
   std::vector<glm::vec3> cx;
   std::vector<glm::vec3> cy;
   std::vector<glm::vec3> cz;
-
+  // settings
   int mode = APIC_MODE;
   int example_type = DAM_BREAK;
-  float flip_blend = 0.95f;
+  float flip_blend = 0.99f;
+  // mesh data
+  std::vector<glm::vec3> vertices;
+  std::vector<glm::uvec3> indices;
 
   Simulation(){};
 
@@ -39,6 +43,8 @@ public:
   // io methods
   void save_particles(std::string fname);
   void save_voxels(std::string fname);
+  void generate_mesh();
+  void save_mesh(std::string fname);
   // particle init methods
   void populate_particles();
   void add_dam_break();

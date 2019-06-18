@@ -33,6 +33,7 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_, int x) {
   simulation.init(lx_, nx_, ny_, nz_);
   simulation.example_type = x;
   simulation.populate_particles();
+  simulation.step_frame(0.0001f);
   std::cout << "running apic simulation with " << simulation.particles.size()
             << " particles" << std::endl;
 
@@ -172,7 +173,7 @@ void GUI::update(bool force) {
     for (int i = 0; i < simulation.grid.phi.sx; i++) {
       for (int j = 0; j < simulation.grid.phi.sy; j++) {
         for (int k = 0; k < simulation.grid.phi.sz; k++) {
-          if (simulation.grid.marker(i, j, k) == FLUID_CELL) {
+          if (simulation.grid.phi(i, j, k) <= 1.5f) {
             glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
                                     simulation.grid.h * j + offs,
                                     simulation.grid.h * k + offs);

@@ -424,92 +424,28 @@ void Grid::compute_phi() {
 // TODO abstract each direction into a function, as in sweeping velocity
 void Grid::sweep_phi() {
   // sweep in 8 directions
+  for (int x = 0; x <= 1; x++) {
+    for (int y = 0; y <= 1; y++) {
+      for (int z = 0; z <= 1; z++) {
+        int li = x ? phi.sx - 2 : 1;
+        int lj = x ? phi.sy - 2 : 1;
+        int lk = x ? phi.sz - 2 : 1;
+        int ui = x ? -1 : phi.sx;
+        int uj = x ? -1 : phi.sy;
+        int uk = x ? -1 : phi.sz;
+        int si = x ? -1 : 1;
+        int sj = x ? -1 : 1;
+        int sk = x ? -1 : 1;
 
-  // f, f, f
-  for (int i = 1; i < phi.sx; i++) {
-    for (int j = 1; j < phi.sy; j++) {
-      for (int k = 1; k < phi.sz; k++) {
-        if (marker(i, j, k) != FLUID_CELL)
-          solve_phi(phi(i - 1, j, k), phi(i, j - 1, k), phi(i, j, k - 1),
-                    phi(i, j, k));
-      }
-    }
-  }
-
-  // f, f, b
-  for (int i = 1; i < phi.sx; i++) {
-    for (int j = 1; j < phi.sy; j++) {
-      for (int k = phi.sz - 2; k >= 0; k--) {
-        if (marker(i, j, k) != FLUID_CELL)
-          solve_phi(phi(i - 1, j, k), phi(i, j - 1, k), phi(i, j, k + 1),
-                    phi(i, j, k));
-      }
-    }
-  }
-
-  // f, b, f
-  for (int i = 1; i < phi.sx; i++) {
-    for (int j = phi.sy - 2; j >= 0; j--) {
-      for (int k = 1; k < phi.sz; k++) {
-        if (marker(i, j, k) != FLUID_CELL)
-          solve_phi(phi(i - 1, j, k), phi(i, j + 1, k), phi(i, j, k - 1),
-                    phi(i, j, k));
-      }
-    }
-  }
-
-  // f, b, b
-  for (int i = 1; i < phi.sx; i++) {
-    for (int j = phi.sy - 2; j >= 0; j--) {
-      for (int k = phi.sz - 2; k >= 0; k--) {
-        if (marker(i, j, k) != FLUID_CELL)
-          solve_phi(phi(i - 1, j, k), phi(i, j + 1, k), phi(i, j, k + 1),
-                    phi(i, j, k));
-      }
-    }
-  }
-  //-----------
-
-  // b, f, f
-  for (int i = phi.sx - 2; i >= 0; i--) {
-    for (int j = 1; j < phi.sy; j++) {
-      for (int k = 1; k < phi.sz; k++) {
-        if (marker(i, j, k) != FLUID_CELL)
-          solve_phi(phi(i + 1, j, k), phi(i, j - 1, k), phi(i, j, k - 1),
-                    phi(i, j, k));
-      }
-    }
-  }
-
-  // b, f, b
-  for (int i = phi.sx - 2; i >= 0; i--) {
-    for (int j = 1; j < phi.sy; j++) {
-      for (int k = phi.sz - 2; k >= 0; k--) {
-        if (marker(i, j, k) != FLUID_CELL)
-          solve_phi(phi(i + 1, j, k), phi(i, j - 1, k), phi(i, j, k + 1),
-                    phi(i, j, k));
-      }
-    }
-  }
-
-  // b, b, f
-  for (int i = phi.sx - 2; i >= 0; i--) {
-    for (int j = phi.sy - 2; j >= 0; j--) {
-      for (int k = 1; k < phi.sz; k++) {
-        if (marker(i, j, k) != FLUID_CELL)
-          solve_phi(phi(i + 1, j, k), phi(i, j + 1, k), phi(i, j, k - 1),
-                    phi(i, j, k));
-      }
-    }
-  }
-
-  // b, b, b
-  for (int i = phi.sx - 2; i >= 0; i--) {
-    for (int j = phi.sy - 2; j >= 0; j--) {
-      for (int k = phi.sz - 2; k >= 0; k--) {
-        if (marker(i, j, k) != FLUID_CELL)
-          solve_phi(phi(i + 1, j, k), phi(i, j + 1, k), phi(i, j, k + 1),
-                    phi(i, j, k));
+        for (int i = li; i != ui; i += si) {
+          for (int j = lj; j != uj; j += sj) {
+            for (int k = lk; k != uk; k += sk) {
+              if (marker(i, j, k) != FLUID_CELL)
+                solve_phi(phi(i - si, j, k), phi(i, j - sj, k),
+                          phi(i, j, k - sk), phi(i, j, k));
+            }
+          }
+        }
       }
     }
   }

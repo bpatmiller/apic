@@ -19,9 +19,14 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
   if (key == GLFW_KEY_Q) {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
     return;
+  } else if (key == GLFW_KEY_M && action == GLFW_RELEASE) {
+    std::cout << "polygonizing particles and exporting mesh\n";
+    gui->simulation.generate_mesh();
+    gui->simulation.save_mesh(std::string("mesh.ply"));
+
   } else if (key == GLFW_KEY_E && action == GLFW_RELEASE) {
     std::cout << "exporting particles" << std::endl;
-    gui->simulation.save_voxels(std::string("unnamed"));
+    gui->simulation.save_voxels(std::string("unnamed.ply"));
   } else if (key == GLFW_KEY_G && action == GLFW_RELEASE) {
     gui->draw_grid = !gui->draw_grid;
   } else if (key == GLFW_KEY_V && action == GLFW_RELEASE) {
