@@ -1,4 +1,5 @@
 #include "gui.h"
+#include <glm/gtx/string_cast.hpp>
 
 const glm::vec3 FORWARD(0, 0, -1);
 const glm::vec3 SIDE(1, 0, 0);
@@ -43,6 +44,7 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_, int x) {
   grid_program = Program("src/shaders/grid.vs", "", "src/shaders/grid.fs", "");
   velocity_program =
       Program("src/shaders/vel.vs", "", "src/shaders/vel.fs", "");
+  mesh_program = Program("src/shaders/mesh.vs", "", "src/shaders/mesh.fs", "");
 
   // set up particle VAO
   std::vector<glm::vec3> sphere_vertices;
@@ -100,6 +102,11 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_, int x) {
   velocity_vao.vb.set(vel_vertices);
   velocity_vao.ib.set(vel_offsets);
 
+  // mesh
+  // simulation.generate_mesh();
+  // mesh_vao.setLayout({3}, false);
+  // mesh_vao.vb.set(simulation.vertices);
+
   // some gl settings
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glEnable(GL_DEPTH_TEST);
@@ -149,7 +156,7 @@ void GUI::update(bool force) {
 
   // handle keypress
   if (keyHeld[GLFW_KEY_W]) {
-    if (base_eye.z > 0.2f) {
+    if (base_eye.z - focus.z > 0.2f) {
       base_eye.z -= 0.1f;
     }
   }
@@ -162,34 +169,53 @@ void GUI::update(bool force) {
 
   // step the simulation, copy the new particle data
   if (keyHeld[GLFW_KEY_P] || force) {
+    dirty = true;
     simulation.step_frame(timestep);
     fluid.ib.update(simulation.particles, 0);
   }
 
+  if (draw_mesh) {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    if (dirty) {
+      simulation.generate_mesh();
+      mesh_vao.setLayout({3}, false);
+      mesh_vao.vb.set(simulation.vertices);
+    }
+
+    mesh_program.use();
+    mesh_program.setMat4("projection", projection_matrix);
+    mesh_program.setMat4("view", view_matrix);
+    mesh_vao.bind();
+    glDrawElements(GL_TRIANGLES, simulation.indices.size() * 3, GL_UNSIGNED_INT,
+                   simulation.indices.data());
+  }
+
   // render the grid
   if (draw_grid) {
-    // update grid vao
-    float offs = simulation.grid.h * 0.5;
-    for (int i = 0; i < simulation.grid.phi.sx; i++) {
-      for (int j = 0; j < simulation.grid.phi.sy; j++) {
-        for (int k = 0; k < simulation.grid.phi.sz; k++) {
-          if (simulation.grid.phi(i, j, k) <= 1.5f) {
-            glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
-                                    simulation.grid.h * j + offs,
-                                    simulation.grid.h * k + offs);
-            grid_offsets[i + (simulation.grid.phi.sx * j) +
-                         (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                        [3] = glm::length(simulation.trilerp_uvw(p));
-          } else {
-            grid_offsets[i + (simulation.grid.phi.sx * j) +
-                         (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                        [3] = 0;
+    if (dirty) {
+      // update grid vao
+      float offs = simulation.grid.h * 0.5;
+      for (int i = 0; i < simulation.grid.phi.sx; i++) {
+        for (int j = 0; j < simulation.grid.phi.sy; j++) {
+          for (int k = 0; k < simulation.grid.phi.sz; k++) {
+            if (simulation.grid.phi(i, j, k) <= 1.5f) {
+              glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
+                                      simulation.grid.h * j + offs,
+                                      simulation.grid.h * k + offs);
+              grid_offsets[i + (simulation.grid.phi.sx * j) +
+                           (simulation.grid.phi.sx * simulation.grid.phi.sy *
+                            k)][3] = glm::length(simulation.trilerp_uvw(p));
+            } else {
+              grid_offsets[i + (simulation.grid.phi.sx * j) +
+                           (simulation.grid.phi.sx * simulation.grid.phi.sy *
+                            k)][3] = 0;
+            }
           }
         }
       }
+      grid_vao.ib.update(grid_offsets, 0);
     }
-    grid_vao.ib.update(grid_offsets, 0);
-
     if (draw_particles) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     } else {
@@ -206,22 +232,24 @@ void GUI::update(bool force) {
   }
 
   if (draw_velocity) {
-    float offs = simulation.grid.h * 0.5;
-    // update vao
-    for (int i = 0; i < simulation.grid.phi.sx; i++) {
-      for (int j = 0; j < simulation.grid.phi.sy; j++) {
-        for (int k = 0; k < simulation.grid.phi.sz; k++) {
-          glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
-                                  simulation.grid.h * j + offs,
-                                  simulation.grid.h * k + offs);
+    if (dirty) {
+      float offs = simulation.grid.h * 0.5;
+      // update vao
+      for (int i = 0; i < simulation.grid.phi.sx; i++) {
+        for (int j = 0; j < simulation.grid.phi.sy; j++) {
+          for (int k = 0; k < simulation.grid.phi.sz; k++) {
+            glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
+                                    simulation.grid.h * j + offs,
+                                    simulation.grid.h * k + offs);
 
-          vel_offsets[i + (simulation.grid.phi.sx * j) +
-                      (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
-                     [1] = 2.0f * simulation.trilerp_uvw(p);
+            vel_offsets[i + (simulation.grid.phi.sx * j) +
+                        (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
+                       [1] = 2.0f * simulation.trilerp_uvw(p);
+          }
         }
       }
+      velocity_vao.ib.update(vel_offsets, 0);
     }
-    velocity_vao.ib.update(vel_offsets, 0);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     velocity_program.use();
@@ -244,4 +272,5 @@ void GUI::update(bool force) {
                             GL_UNSIGNED_INT, sphere_indices.data(),
                             simulation.particles.size());
   }
+  dirty = false;
 }

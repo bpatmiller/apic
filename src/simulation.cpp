@@ -1,10 +1,4 @@
 #include "simulation.h"
-#include "marchingcubes.h"
-#include <fstream>
-#include <glm/gtc/random.hpp>
-#include <glm/gtx/common.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <iostream>
 
 #define U_OFFSET glm::vec3(0.5f, 0, 0)
 #define V_OFFSET glm::vec3(0, 0.5f, 0)
@@ -538,69 +532,51 @@ void Simulation::generate_mesh() {
   vertices.clear();
   indices.clear();
 
-  for (int i = 0; i < grid.phi.sx - 2; i++) {
-    for (int j = 0; j < grid.phi.sy - 2; j++) {
-      for (int k = 0; k < grid.phi.sz - 2; k++) {
+  int elements[8] = {0, 3, 4, 7, 1, 2, 5, 6};
+
+  for (int i = 0; i < grid.phi.sx - 1; i++) {
+    for (int j = 0; j < grid.phi.sy - 1; j++) {
+      for (int k = 0; k < grid.phi.sz - 1; k++) {
         positions.clear();
         values.clear();
         // pass in locations and values
         // of 8 neighboring sample points
-        positions[3] =
+        positions[elements[0]] =
             glm::vec3(i * grid.h + offs, j * grid.h + offs, k * grid.h + offs);
-        positions[0] = glm::vec3(i * grid.h + offs, j * grid.h + offs,
-                                 (k + 1) * grid.h + offs);
-        positions[7] = glm::vec3(i * grid.h + offs, (j + 1) * grid.h + offs,
-                                 k * grid.h + offs);
-        positions[4] = glm::vec3(i * grid.h + offs, (j + j) * grid.h + offs,
-                                 (k + 1) * grid.h + offs);
-        positions[2] = glm::vec3((i + 1) * grid.h + offs, j * grid.h + offs,
-                                 k * grid.h + offs);
-        positions[1] = glm::vec3((i + 1) * grid.h + offs, j * grid.h + offs,
-                                 (k + 1) * grid.h + offs);
-        positions[6] = glm::vec3((i + 1) * grid.h + offs,
-                                 (j + 1) * grid.h + offs, k * grid.h + offs);
-        positions[5] =
+        positions[elements[1]] = glm::vec3(i * grid.h + offs, j * grid.h + offs,
+                                           (k + 1) * grid.h + offs);
+        positions[elements[2]] = glm::vec3(
+            i * grid.h + offs, (j + 1) * grid.h + offs, k * grid.h + offs);
+        positions[elements[3]] =
+            glm::vec3(i * grid.h + offs, (j + 1) * grid.h + offs,
+                      (k + 1) * grid.h + offs);
+        positions[elements[4]] = glm::vec3(
+            (i + 1) * grid.h + offs, j * grid.h + offs, k * grid.h + offs);
+        positions[elements[5]] =
+            glm::vec3((i + 1) * grid.h + offs, j * grid.h + offs,
+                      (k + 1) * grid.h + offs);
+        positions[elements[6]] =
+            glm::vec3((i + 1) * grid.h + offs, (j + 1) * grid.h + offs,
+                      k * grid.h + offs);
+        positions[elements[7]] =
             glm::vec3((i + 1) * grid.h + offs, (j + 1) * grid.h + offs,
                       (k + 1) * grid.h + offs);
 
-        values[3] = glm::clamp(grid.phi(i, j, k), -0.5f, 0.5f);
-        values[0] = glm::clamp(grid.phi(i, j, k + 1), -0.5f, 0.5f);
-        values[7] = glm::clamp(grid.phi(i, j + 1, k), -0.5f, 0.5f);
-        values[4] = glm::clamp(grid.phi(i, j + 1, k + 1), -0.5f, 0.5f);
-        values[2] = glm::clamp(grid.phi(i + 1, j, k), -0.5f, 0.5f);
-        values[1] = glm::clamp(grid.phi(i + 1, j, k + 1), -0.5f, 0.5f);
-        values[6] = glm::clamp(grid.phi(i + 1, j + 1, k), -0.5f, 0.5f);
-        values[5] = glm::clamp(grid.phi(i + 1, j + 1, k + 1), -0.5f, 0.5f);
+        values[elements[0]] = glm::clamp(grid.phi(i, j, k), -0.5f, 0.5f);
+        values[elements[1]] = glm::clamp(grid.phi(i, j, k + 1), -0.5f, 0.5f);
+        values[elements[2]] = glm::clamp(grid.phi(i, j + 1, k), -0.5f, 0.5f);
+        values[elements[3]] =
+            glm::clamp(grid.phi(i, j + 1, k + 1), -0.5f, 0.5f);
+        values[elements[4]] = glm::clamp(grid.phi(i + 1, j, k), -0.5f, 0.5f);
+        values[elements[5]] =
+            glm::clamp(grid.phi(i + 1, j, k + 1), -0.5f, 0.5f);
+        values[elements[6]] =
+            glm::clamp(grid.phi(i + 1, j + 1, k), -0.5f, 0.5f);
+        values[elements[7]] =
+            glm::clamp(grid.phi(i + 1, j + 1, k + 1), -0.5f, 0.5f);
 
         polygonize(positions, values, vert_count, indices, vertices);
       }
     }
   }
-  std::cout << "vertex count: " << vert_count << "\n";
-}
-
-void Simulation::save_mesh(std::string fname) {
-  std::cout << fname << "\n";
-  std::ofstream ofile(std::string("out/m_") + fname);
-  int tri_count = indices.size();
-
-  ofile << "ply\n";
-  ofile << "format ascii 1.0\n";
-  ofile << "element vertex " << vertices.size() << "\n";
-  ofile << "property float x\n";
-  ofile << "property float y\n";
-  ofile << "property float z\n";
-  ofile << "element face " << indices.size() << "\n";
-  ofile << "property list uchar int vertex_index\n";
-  ofile << "end_header\n";
-
-  for (auto &v : vertices) {
-    ofile << v.x << " " << v.z << " " << v.y << "\n";
-  }
-  for (auto &i : indices) {
-    ofile << "3 " << i.x << " " << i.y << " " << i.z << "\n";
-  }
-
-  ofile.close();
-  std::cout << "saved out/m_" << fname << "\n";
 }

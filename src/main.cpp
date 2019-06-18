@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 
 #include "gui.h"
+#include "io.h"
 #include <GLFW/glfw3.h>
 #include <getopt.h>
 #include <iostream>
@@ -22,8 +23,8 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
   } else if (key == GLFW_KEY_M && action == GLFW_RELEASE) {
     std::cout << "polygonizing particles and exporting mesh\n";
     gui->simulation.generate_mesh();
-    gui->simulation.save_mesh(std::string("mesh.ply"));
-
+    save_mesh(std::string("mesh.ply"), gui->simulation.indices,
+              gui->simulation.vertices);
   } else if (key == GLFW_KEY_E && action == GLFW_RELEASE) {
     std::cout << "exporting particles" << std::endl;
     gui->simulation.save_voxels(std::string("unnamed.ply"));

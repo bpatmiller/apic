@@ -2,7 +2,13 @@
 
 #include "Particle.h"
 #include "grid.h"
+#include "marchingcubes.h"
+#include <fstream>
 #include <glm/glm.hpp>
+#include <glm/gtc/random.hpp>
+#include <glm/gtx/common.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <iostream>
 #include <vector>
 
 #define PIC_MODE 0

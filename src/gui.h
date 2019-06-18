@@ -20,6 +20,7 @@ public:
   Simulation simulation;
   float timestep = 0.05f;
   float totaltime = 0.0f;
+  bool dirty = true;
 
   // gl variables
   GLFWwindow *window;
@@ -59,8 +60,12 @@ public:
   VAO velocity_vao;
   std::vector<glm::uvec3> vel_indices;
   std::vector<std::array<glm::vec3, 2>> vel_offsets;
-  bool draw_velocity = true;
+  bool draw_velocity = false;
   bool draw_particles = true;
+  // mesh drawing
+  Program mesh_program;
+  VAO mesh_vao;
+  bool draw_mesh = true;
 
   // helper functions
   void create_sphere(float Radius, std::vector<glm::vec3> &s_vertices);

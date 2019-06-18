@@ -297,21 +297,22 @@ void polygonize(std::vector<glm::vec3> &positions, std::vector<float> &values,
 
   // Determine the index into the edge table which
   // tells us which vertices are inside of the surface
-  if (values[0] < 0.0f)
+  float levelset = 0.01f;
+  if (values[0] < levelset)
     CubeIndex |= 1;
-  if (values[1] < 0.0f)
+  if (values[1] < levelset)
     CubeIndex |= 2;
-  if (values[2] < 0.0f)
+  if (values[2] < levelset)
     CubeIndex |= 4;
-  if (values[3] < 0.0f)
+  if (values[3] < levelset)
     CubeIndex |= 8;
-  if (values[4] < 0.0f)
+  if (values[4] < levelset)
     CubeIndex |= 16;
-  if (values[5] < 0.0f)
+  if (values[5] < levelset)
     CubeIndex |= 32;
-  if (values[6] < 0.0f)
+  if (values[6] < levelset)
     CubeIndex |= 64;
-  if (values[7] < 0.0f)
+  if (values[7] < levelset)
     CubeIndex |= 128;
 
   // Cube is entirely in/out of the surface
@@ -378,5 +379,5 @@ glm::vec3 VertexInterp(const glm::vec3 &p1, const glm::vec3 &p2, float valp1,
     return p2;
   if (std::fabs(valp1 - valp2) < 0.0001)
     return p1;
-  return p1 + (((-valp1) / ((valp2 - valp1)) * (p2 - p1)));
+  return 0.5f * (p1 + p2); // p1 + (((-valp1) / ((valp2 - valp1)) * (p2 - p1)));
 }
