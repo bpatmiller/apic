@@ -319,14 +319,13 @@ glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
   for (int i = 0; i <= 1; i++) { // {0,1}
     for (int j = 0; j <= 1; j++) {
       for (int k = 0; k <= 1; k++) {
-        float w = (1 - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
-                  (1 - std::fabs(j - coords.y)) * // {""}
-                  (1 - std::fabs(k - coords.z));  //{""}
-        wv = glm::vec3(i - coords.x, j - coords.y, k - coords.z) * grid.h;
-        c += w * wv * field(index.x + i, index.y + j, index.z + k);
+        // gradient of weight function
+        wv = glm::vec3(coords.x - i, coords.y - j, coords.z - k);
+        c += wv * field(index.x + i, index.y + j, index.z + k);
       }
     }
   }
+
   return c;
 }
 
@@ -542,7 +541,7 @@ void Simulation::step_and_save(float t, std::string fname) {
     step_frame(tstep);
     generate_mesh();
     save_mesh(fname + std::string("_") + std::to_string(tm) +
-                   std::string(".ply"));
+              std::string(".ply"));
   }
 }
 

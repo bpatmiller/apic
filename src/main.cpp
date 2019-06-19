@@ -49,7 +49,7 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
     gui->update(true);
   } else if (key == GLFW_KEY_MINUS && action == GLFW_RELEASE) {
     std::cout << "cycling example type" << std::endl;
-    gui->simulation.example_type = (gui->simulation.example_type + 1) % 3;
+    gui->simulation.example_type = ((gui->simulation.example_type + 1) % 3);
   }
 
   if (action == GLFW_PRESS) {

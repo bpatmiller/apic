@@ -65,7 +65,7 @@ public:
   // mesh drawing
   Program mesh_program;
   VAO mesh_vao;
-  bool draw_mesh = true;
+  bool draw_mesh = false;
 
   // helper functions
   void create_sphere(float Radius, std::vector<glm::vec3> &s_vertices);
