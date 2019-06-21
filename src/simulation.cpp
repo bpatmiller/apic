@@ -49,6 +49,8 @@ void Simulation::add_opp_corners() {
     }
   }
 
+  if (true)
+    return;
   for (int x = grid.nx * 0.05; x < grid.nx * 0.3; x++) {
     for (int y = grid.ny * 0.1; y < grid.ny * 0.8; y++) {
       for (int z = grid.nz * 0.05; z < grid.nz * 0.4; z++) {

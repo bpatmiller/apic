@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 
+#include "geom.h"
 #include "gui.h"
 #include <GLFW/glfw3.h>
 #include <getopt.h>
@@ -158,6 +159,8 @@ int main(int argc, char *argv[]) {
 
     gui.init(2.0f, r, r, r, x);
     gui.simulation.mode = m;
+    voxelize_mesh("mesh/dragon.ply", gui.simulation.grid,
+                  glm::vec3(1.0f, 1.0f, 1.0f));
 
     while (!glfwWindowShouldClose(window)) {
       gui.update();

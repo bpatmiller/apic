@@ -15,10 +15,12 @@
     -e to export files
     -a to export each frame
     -o to set output directory
+-change cmake error flags
+-refactor sweep code (did not do this, sweep code is fine)
 
 ## todo
--change cmake error flags
--refactor sweep code
+-import obstacles
+-emitters
 -refactor export code
 -optimization
 -viscosity

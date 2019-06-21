@@ -35,7 +35,7 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_, int x) {
   simulation.example_type = x;
   simulation.populate_particles();
   simulation.step_frame(0.0001f);
-  std::cout << "running apic simulation with " << simulation.particles.size()
+  std::cout << ":: running simulation with " << simulation.particles.size()
             << " particles" << std::endl;
 
   // compile shaders
@@ -195,17 +195,18 @@ void GUI::update(bool force) {
   if (draw_grid) {
     if (dirty) {
       // update grid vao
-      float offs = simulation.grid.h * 0.5;
+      // float offs = simulation.grid.h * 0.5;
       for (int i = 0; i < simulation.grid.phi.sx; i++) {
         for (int j = 0; j < simulation.grid.phi.sy; j++) {
           for (int k = 0; k < simulation.grid.phi.sz; k++) {
-            if (simulation.grid.phi(i, j, k) <= 1.5f) {
-              glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
-                                      simulation.grid.h * j + offs,
-                                      simulation.grid.h * k + offs);
+            if (simulation.grid.marker(i, j, k) == SOLID_CELL) {
+              // glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
+              //                         simulation.grid.h * j + offs,
+              //                         simulation.grid.h * k + offs);
               grid_offsets[i + (simulation.grid.phi.sx * j) +
                            (simulation.grid.phi.sx * simulation.grid.phi.sy *
-                            k)][3] = glm::length(simulation.trilerp_uvw(p));
+                            k)][3] =
+                  1.0f; // glm::length(simulation.trilerp_uvw(p));
             } else {
               grid_offsets[i + (simulation.grid.phi.sx * j) +
                            (simulation.grid.phi.sx * simulation.grid.phi.sy *
