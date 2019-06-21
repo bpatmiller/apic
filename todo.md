@@ -9,8 +9,6 @@
 -add affine transform
 -fix numerical dissapation (gravity? boundary conditions?) spoiler alert it was something dumb like my sweep functions
 -switch to eigen for pressure solve
-
-## todo
 -getopt
     -g to enable graphical mode
     -t to set a time limit
@@ -18,8 +16,13 @@
     -a to export each frame
     -o to set output directory
 
+## todo
+-change cmake error flags
+-optimization
+-viscosity
+-particle level set method
+-mesh cleanup (remove doubles, correct normals)
 -load solid/fluid files
-    -improve cell marking
 -fix boundary conditions (clinging)
 
 ## further work

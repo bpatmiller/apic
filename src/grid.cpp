@@ -27,7 +27,7 @@ void Grid::add_gravity(float dt) {
 }
 
 void Grid::extend_velocity() {
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 2; i++) {
     sweep_velocity();
   }
 }
@@ -416,7 +416,7 @@ void Grid::compute_phi() {
     }
   }
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 2; i++) {
     sweep_phi();
   }
 }

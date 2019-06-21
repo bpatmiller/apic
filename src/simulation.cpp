@@ -186,11 +186,6 @@ void Simulation::position_to_grid(glm::vec3 p, glm::vec3 offset,
   // set index
   index = glm::ivec3(i, j, k);
 
-  // check for out of bounds
-  if (i < 0 || j < 0 || k < 0)
-    std::cerr << "ERROR: invalid index || position: " << glm::to_string(p)
-              << std::endl;
-
   float bx = nx - std::floor(nx);
   float by = ny - std::floor(ny);
   float bz = nz - std::floor(nz);
