@@ -40,6 +40,7 @@ public:
 
   void init(float lx_, int nx_, int ny_, int nz_) {
     grid.init(lx_, nx_, ny_, nz_);
+    intialize_boundaries();
   }
 
   void reset() {
@@ -58,6 +59,7 @@ public:
   void add_center_drop();
   void add_opp_corners();
   // auxillary methods
+  void intialize_boundaries();
   void step_and_save(float t, std::string fname);
   void advance(float dt);
   void step_frame(float time);

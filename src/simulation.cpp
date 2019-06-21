@@ -318,7 +318,7 @@ glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
   glm::mat3x3 D = glm::mat3x3(0.0f);
 
   // offset position slightly to prevent a singular D
-  coords = glm::clamp(coords, 0.000001f, 0.999999f);
+  coords = glm::clamp(coords, 0.0000001f, 0.9999999f);
 
   // compute D
   for (int i = 0; i <= 1; i++) { // {0,1}
@@ -417,8 +417,12 @@ void Simulation::advect(float dt) {
 }
 
 void Simulation::mark_cells() {
-  // start by setting cells as empty
-  grid.marker.clear();
+  // mark all non-solid cells as empty
+  for (int i = 0; i < grid.marker.size; i++) {
+    if (grid.marker.data[i] != SOLID_CELL) {
+      grid.marker.data[i] = AIR_CELL;
+    }
+  }
 
   // mark liquid cells
   glm::ivec3 index;
@@ -427,7 +431,9 @@ void Simulation::mark_cells() {
     position_to_grid(p.position, glm::vec3(0.5f, 0.5f, 0.5f), index, coords);
     grid.marker(index.x, index.y, index.z) = FLUID_CELL;
   }
+}
 
+void Simulation::intialize_boundaries() {
   // mark solid cells
   int x, y, z;
   // top and bottom (y axis)
