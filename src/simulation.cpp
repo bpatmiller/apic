@@ -320,7 +320,9 @@ glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
     for (int j = 0; j <= 1; j++) {
       for (int k = 0; k <= 1; k++) {
         // gradient of weight function
-        wv = glm::vec3(coords.x - i, coords.y - j, coords.z - k);
+        wv = glm::vec3((1.0f-std::fabs(1.0f-coords.y))*(1.0f-std::fabs(1.0f-coords.z)),
+                       (1.0f-std::fabs(1.0f-coords.x))*(1.0f-std::fabs(1.0f-coords.z)),
+                       (1.0f-std::fabs(1.0f-coords.x))*(1.0f-std::fabs(1.0f-coords.y)));
         c += wv * field(index.x + i, index.y + j, index.z + k);
       }
     }
