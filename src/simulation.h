@@ -27,6 +27,7 @@ public:
   std::vector<glm::vec3> cx;
   std::vector<glm::vec3> cy;
   std::vector<glm::vec3> cz;
+  std::vector<glm::mat3x3> d; // using to validate the weight gradient
   // settings
   int mode = APIC_MODE;
   int example_type = DAM_BREAK;

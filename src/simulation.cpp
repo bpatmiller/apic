@@ -313,17 +313,40 @@ void Simulation::particles_to_grid() {
 // return gradient of weighted field
 glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
                                 glm::vec3 coords) {
-  glm::vec3 wv;
+  glm::vec3 wg;
   glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
+  glm::mat3x3 D = glm::mat3x3(0.0f);
 
+  // offset position slightly to prevent a singular D
+  coords = glm::clamp(coords, 0.000001f, 0.999999f);
+
+  // compute D
   for (int i = 0; i <= 1; i++) { // {0,1}
     for (int j = 0; j <= 1; j++) {
       for (int k = 0; k <= 1; k++) {
-        // gradient of weight function
-        wv = glm::vec3((1.0f-std::fabs(1.0f-coords.y))*(1.0f-std::fabs(1.0f-coords.z)),
-                       (1.0f-std::fabs(1.0f-coords.x))*(1.0f-std::fabs(1.0f-coords.z)),
-                       (1.0f-std::fabs(1.0f-coords.x))*(1.0f-std::fabs(1.0f-coords.y)));
-        c += wv * field(index.x + i, index.y + j, index.z + k);
+        float w = (1 - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
+                  (1 - std::fabs(j - coords.y)) * // {""}
+                  (1 - std::fabs(k - coords.z));  //{""}
+        glm::vec3 v =
+            glm::vec3(i - coords.x, j - coords.y, k - coords.z) * grid.h;
+
+        D += w * glm::outerProduct(v, v);
+      }
+    }
+  }
+
+  // weight gradient = w * D^-1 * (x_i - x_p)
+  for (int i = 0; i <= 1; i++) { // {0,1}
+    for (int j = 0; j <= 1; j++) {
+      for (int k = 0; k <= 1; k++) {
+        float w = (1 - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
+                  (1 - std::fabs(j - coords.y)) * // {""}
+                  (1 - std::fabs(k - coords.z));  //{""}
+        glm::vec3 v =
+            glm::vec3(i - coords.x, j - coords.y, k - coords.z) * grid.h;
+        assert(glm::determinant(D) != 0);
+        wg = w * glm::inverse(D) * glm::vec3(v);
+        c += wg * field(index.x + i, index.y + j, index.z + k);
       }
     }
   }
