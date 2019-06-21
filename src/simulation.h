@@ -44,8 +44,10 @@ public:
   }
 
   void reset() {
-    populate_particles();
     grid.reset();
+    intialize_boundaries();
+    populate_particles();
+
   };
 
   // io methods
