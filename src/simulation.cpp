@@ -429,8 +429,6 @@ void Simulation::mark_cells() {
 }
 
 void Simulation::intialize_boundaries() {
-  // mark solid cells
-  int x, y, z;
   // top and bottom (y axis)
   for (int i = 0; i < grid.marker.sx; i++) {
     for (int k = 0; k < grid.marker.sy; k++) {
@@ -532,7 +530,6 @@ void Simulation::save_voxels(std::string fname) {
 
 void Simulation::save_mesh(std::string fname) {
   std::ofstream ofile(std::string("out/m_") + fname);
-  int tri_count = indices.size();
 
   ofile << "ply\n";
   ofile << "format ascii 1.0\n";

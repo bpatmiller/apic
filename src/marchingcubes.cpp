@@ -292,7 +292,6 @@ void polygonize(std::vector<glm::vec3> &positions, std::vector<float> &values,
                 int &vert_count, std::vector<glm::uvec3> &indices,
                 std::vector<glm::vec3> &vertices) {
   int CubeIndex = 0;
-  int NewVertexCount = 0;
   glm::vec3 VertexList[12];
 
   // Determine the index into the edge table which

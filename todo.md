@@ -18,10 +18,13 @@
 
 ## todo
 -change cmake error flags
+-refactor sweep code
+-refactor export code
 -optimization
 -viscosity
 -particle level set method
 -mesh cleanup (remove doubles, correct normals)
+-explicitly compute weight gradient
 -load solid/fluid files
 -fix boundary conditions (clinging)
 
