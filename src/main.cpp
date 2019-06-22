@@ -150,7 +150,9 @@ int main(int argc, char *argv[]) {
 
     gui.init(2.0f, r, r, r);
     gui.simulation.mode = m;
-    // gui.simulation.example_type = x;
+    std::cout << ":: importing mesh (solid)\n";
+    voxelize_mesh("mesh/dragon.ply", gui.simulation.grid,
+                  glm::vec3(1.0f, 0.25f, 1.0f), SOLID_CELL);
     gui.simulation.populate_particles();
     gui.update(1e-6f, true);
 

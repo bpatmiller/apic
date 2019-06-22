@@ -8,6 +8,11 @@ uniform mat4 view;
 out float p;
 
 void main() {
-  p = offset_v.w;
-  gl_Position = projection * view * vec4(offset_v.xyz + vertex_position, 1.0);
+  if (p != 0) {
+    p = offset_v.w;
+    gl_Position = projection * view * vec4(offset_v.xyz + vertex_position, 1.0);
+  } else {
+    p = offset_v.w;
+    gl_Position = projection * view * vec4(0.0, 0.0, 0.0, 1.0);
+  }
 }

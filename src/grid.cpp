@@ -26,6 +26,12 @@ void Grid::add_gravity(float dt) {
   }
 }
 
+void Grid::save_velocity() {
+  u.copy(du);
+  v.copy(dv);
+  w.copy(dw);
+}
+
 void Grid::extend_velocity() {
   for (int i = 0; i < 2; i++) {
     sweep_velocity();

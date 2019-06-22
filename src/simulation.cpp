@@ -7,34 +7,39 @@
 #define EPS 0.001
 
 void Simulation::populate_particles() {
+  reseed_count = 0;
   particles.clear();
   cx.clear();
   cy.clear();
   cz.clear();
-  add_dam_break();
+  // add_dam_break();
+  add_center_drop();
 }
 
 void Simulation::reseed_cell(int i, int j, int k) {
-  float base_x = i * grid.h;
-  float base_y = j * grid.h;
-  float base_z = k * grid.h;
-  for (int i = 0; i < 8; i++) {
-    float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
-    float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
-    float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
-    // add particles
-    particles.push_back(Particle(
-        glm::vec3(base_x + jitter_x, base_y + jitter_y, base_z + jitter_z),
-        glm::vec3(0, 0, 0)));
-    // APIC vectors
-    cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-    cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-    cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+  if (grid.marker(i, j, k) != SOLID_CELL) {
+    float base_x = i * grid.h;
+    float base_y = j * grid.h;
+    float base_z = k * grid.h;
+    for (int i = 0; i < 8; i++) {
+      float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
+      float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
+      float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
+      // add particles
+      particles.push_back(Particle(
+          glm::vec3(base_x + jitter_x, base_y + jitter_y, base_z + jitter_z),
+          glm::vec3(0, 0, 0)));
+      // APIC vectors
+      cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+      cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+      cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+    }
+    dirty = true;
   }
-  dirty = true;
 }
 
 void Simulation::reseed_particles() {
+  reseed_count = 0;
   particles.clear();
   cx.clear();
   cy.clear();
@@ -73,7 +78,6 @@ void Simulation::emit_particles() {
   }
 }
 
-// dam break scenario
 void Simulation::add_dam_break() {
   for (int x = grid.nx * 0.75; x < grid.nx * 0.95; x++) {
     for (int y = grid.ny * 0.1; y < grid.ny * 0.6; y++) {
@@ -85,10 +89,15 @@ void Simulation::add_dam_break() {
   }
 }
 
-void Simulation::save_velocities() {
-  grid.u.copy(grid.du);
-  grid.v.copy(grid.dv);
-  grid.w.copy(grid.dw);
+void Simulation::add_center_drop() {
+  for (int x = grid.nx * 0.3; x < grid.nx * 0.7; x++) {
+    for (int y = grid.ny * 0.5; y < grid.ny * 0.8; y++) {
+      for (int z = grid.nz * 0.3; z < grid.nz * 0.7; z++) {
+        // for each cell, add 8 new jittered particles
+        reseed_cell(x, y, z);
+      }
+    }
+  }
 }
 
 // given a position, return the trilinear interpolation
@@ -163,6 +172,18 @@ void Simulation::grid_add_quantities(T &arr, float q, glm::ivec3 index,
                   (1 - std::fabs(k - coords.z));  //{""}
         arr(index.x + i, index.y + j, index.z + k) += w * q; //{0,1}
         grid.count(index.x + i, index.y + j, index.z + k) += w;
+      }
+    }
+  }
+}
+
+template <class T>
+void Simulation::grid_add_quantities_constant(T &arr, float q, glm::ivec3 index,
+                                              glm::vec3 coords) {
+  for (int i = 0; i <= 1; i++) {
+    for (int j = 0; j <= 1; j++) {
+      for (int k = 0; k <= 1; k++) {
+        arr(index.x + i, index.y + j, index.z + k) += q;
       }
     }
   }
@@ -367,12 +388,18 @@ void Simulation::advect(float dt) {
     glm::vec3 coords;
     glm::ivec3 index;
     position_to_grid(p.position, glm::vec3(0.5, 0.5, 0.5), index, coords);
-    int pcount = 0;
-    while (grid.marker(index.x, index.y, index.z) == SOLID_CELL) {
-      p.position += glm::vec3(0, 1.0f, 0) * (1.0f - coords.y) * grid.h;
-      pcount++;
-      if (pcount > 3)
-        break;
+    if (grid.marker(index.x, index.y, index.z) == SOLID_CELL) {
+      // reesed particles elsewhere
+      glm::ivec4 best_candidate = candidates.back();
+      p.position = glm::vec3((best_candidate.x + 0.5f) * grid.h,
+                             (best_candidate.y + 0.5f) * grid.h,
+                             (best_candidate.z + 0.5f) * grid.h);
+      // resample velocity and C
+      p.velocity = trilerp_uvw(p.position);
+      cx[i] = glm::vec3(0);
+      cy[i] = glm::vec3(0);
+      cz[i] = glm::vec3(0);
+      candidates.pop_back();
     }
   }
 }
@@ -420,12 +447,50 @@ void Simulation::intialize_boundaries() {
   }
 }
 
+void Simulation::make_candidate_reseeds() {
+  // populate pc array with effect of each particle
+  // on each grid node
+  for (auto &p : particles) {
+    glm::vec3 coords;
+    glm::ivec3 index;
+    position_to_grid(p.position, glm::vec3(0.5, 0.5, 0.5), index, coords);
+    grid_add_quantities_constant(grid.pc, 1, index, coords);
+  }
+
+  // loop through all fluid cells, if they
+  // are surrounded on all sides by fluid,
+  // add them to a candidate list sor
+  candidates.clear();
+  for (int i = 0; i < grid.marker.sx; i++) {
+    for (int j = 0; j < grid.marker.sy; j++) {
+      for (int k = 0; k < grid.marker.sz; k++) {
+        if (grid.marker(i, j, k) == FLUID_CELL &&
+            grid.marker(i + 1, j, k) == FLUID_CELL &&
+            grid.marker(i - 1, j, k) == FLUID_CELL &&
+            grid.marker(i, j + 1, k) == FLUID_CELL &&
+            grid.marker(i, j - 1, k) == FLUID_CELL &&
+            grid.marker(i, j, k + 1) == FLUID_CELL &&
+            grid.marker(i, j, k - 1) == FLUID_CELL) {
+          candidates.push_back(glm::ivec4(i, j, k, grid.pc(i, j, k)));
+        }
+      }
+    }
+  }
+  // sort with highest pc first
+  // and later pop candidates during reseed
+  std::sort(
+      candidates.begin(), candidates.end(),
+      [](const glm::ivec4 &a, const glm::ivec4 &b) { return a[3] > b[3]; });
+}
+
 void Simulation::advance(float dt) {
+  reseed_count = 0;
   emit_particles();
+  make_candidate_reseeds();
   for (int i = 0; i < 5; i++)
     advect(0.2 * dt);
   particles_to_grid();
-  save_velocities();
+  grid.save_velocity();
   grid.add_gravity(dt);
   mark_cells();
   grid.compute_phi();
@@ -434,13 +499,16 @@ void Simulation::advance(float dt) {
   grid.project(dt);
   grid.extend_velocity();
   grid_to_particles();
+  // std::printf("(%f%%) reseed count: %i\n",
+  //             100.0f * (float)reseed_count / (float)particles.size(),
+  //             reseed_count);
 }
 
 void Simulation::step_frame(float time) {
   float t = 0;
   float dt;
   while (t < time) {
-    dt = std::fmin(grid.CFL(), 0.05f);
+    dt = 2.0 * grid.CFL();
     if (t + dt >= time) {
       dt = time - t;
     }

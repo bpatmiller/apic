@@ -27,6 +27,7 @@ public:
   Array3d pressure;   // self explanatory
   Array3d r;          // divergence
   Array3i fl_index;   // gives each fluid cell an index
+  Array3i pc;         // count used for reseeding
 
   // used for pressure solve
   Eigen::SparseMatrix<double> A;
@@ -60,6 +61,7 @@ public:
     pressure.init(nx, ny, nz);
     r.init(nx, ny, nz);
     fl_index.init(nx, ny, nz);
+    pc.init(nx, ny, nz);
   }
 
   void reset() {
@@ -79,6 +81,7 @@ public:
     pressure.clear();
     r.clear();
     fl_index.clear();
+    pc.clear();
   }
 
   float CFL();
@@ -93,6 +96,8 @@ public:
   void sweep_v(int i0, int i1, int j0, int j1, int k0, int k1);
   void sweep_w(int i0, int i1, int j0, int j1, int k0, int k1);
   void enforce_boundary();
+
+  void save_velocity();
 
   void project(float dt);
   void compute_divergence();

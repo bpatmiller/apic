@@ -50,6 +50,9 @@ public:
   int example_type = DAM_BREAK;
   float flip_blend = 0.99f;
   bool dirty = true;
+  // reseed data
+  std::vector<glm::ivec4> candidates;
+  int reseed_count = 0;
   // mesh data
   std::vector<glm::vec3> vertices;
   std::vector<glm::uvec3> indices;
@@ -79,12 +82,14 @@ public:
   void reseed_particles();
   void reseed_cell(int i, int j, int k);
   void add_dam_break();
+  void add_center_drop();
   void emit_particles();
   // auxillary methods
   void intialize_boundaries();
   void step_and_save(float t, std::string fname);
   void advance(float dt);
   void step_frame(float time);
+  void make_candidate_reseeds();
   // simulation methods
   void particles_to_grid();
   void save_velocities();
@@ -96,6 +101,9 @@ public:
                         glm::vec3 &coords);
   template <class T>
   void grid_add_quantities(T &arr, float q, glm::ivec3 index, glm::vec3 coords);
+  template <class T>
+  void grid_add_quantities_constant(T &arr, float q, glm::ivec3 index,
+                                    glm::vec3 coords);
   glm::vec3 trilerp_uvw(glm::vec3 p);
   glm::vec3 trilerp_dudvdw(glm::vec3 p);
   // APIC functions

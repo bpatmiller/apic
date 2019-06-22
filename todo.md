@@ -18,11 +18,13 @@
 -change cmake error flags
 -refactor sweep code (did not do this, sweep code is fine)
 -import obstacles
-
-## todo
 -emitters
 -refactor export code
--optimization
+-optimization (only reduced amount of sweeping)
+
+## todo
+-fix density (look at that masters papers)
+-more examples?
 -viscosity
 -particle level set method
 -mesh cleanup (remove doubles, correct normals)

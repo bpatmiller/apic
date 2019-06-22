@@ -61,9 +61,9 @@ void GUI::init(float lx_, int nx_, int ny_, int nz_) {
                  {0, 5, 1}, {0, 4, 5}, {2, 3, 7}, {2, 7, 6},
                  {3, 1, 5}, {3, 5, 7}, {0, 2, 6}, {0, 6, 4}};
   grid_offsets.resize(simulation.grid.phi.size);
-  for (int i = 0; i < simulation.grid.phi.sx; i++) {
-    for (int j = 0; j < simulation.grid.phi.sy; j++) {
-      for (int k = 0; k < simulation.grid.phi.sz; k++) {
+  for (int i = 1; i < simulation.grid.phi.sx - 1; i++) {
+    for (int j = 1; j < simulation.grid.phi.sy - 1; j++) {
+      for (int k = 1; k < simulation.grid.phi.sz - 1; k++) {
         grid_offsets[i + (simulation.grid.phi.sx * j) +
                      (simulation.grid.phi.sx * simulation.grid.phi.sy * k)] =
             glm::vec4(h * i, h * j, h * k, 1.0f);
@@ -124,10 +124,6 @@ void GUI::update_camera() {
   glm::quat qpitch = glm::angleAxis(pitch, SIDE);
   orientation = qyaw * qpitch;
 }
-
-// void GUI::update() { update(timestep, false); }
-
-// void GUI::update(float t) { update(t, false); }
 
 void GUI::update(float t, bool force) {
   if (t < 0)
@@ -200,18 +196,13 @@ void GUI::update(float t, bool force) {
   if (draw_grid) {
     if (dirty) {
       // update grid vao
-      // float offs = simulation.grid.h * 0.5;
-      for (int i = 0; i < simulation.grid.phi.sx; i++) {
-        for (int j = 0; j < simulation.grid.phi.sy; j++) {
-          for (int k = 0; k < simulation.grid.phi.sz; k++) {
+      for (int i = 1; i < simulation.grid.phi.sx - 1; i++) {
+        for (int j = 1; j < simulation.grid.phi.sy - 1; j++) {
+          for (int k = 1; k < simulation.grid.phi.sz - 1; k++) {
             if (simulation.grid.marker(i, j, k) == SOLID_CELL) {
-              // glm::vec3 p = glm::vec3(simulation.grid.h * i + offs,
-              //                         simulation.grid.h * j + offs,
-              //                         simulation.grid.h * k + offs);
               grid_offsets[i + (simulation.grid.phi.sx * j) +
                            (simulation.grid.phi.sx * simulation.grid.phi.sy *
-                            k)][3] =
-                  1.0f; // glm::length(simulation.trilerp_uvw(p));
+                            k)][3] = 1.0f;
             } else {
               grid_offsets[i + (simulation.grid.phi.sx * j) +
                            (simulation.grid.phi.sx * simulation.grid.phi.sy *
