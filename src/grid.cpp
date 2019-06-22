@@ -219,32 +219,18 @@ void Grid::sweep_w(int i0, int i1, int j0, int j1, int k0, int k1) {
 }
 
 void Grid::enforce_boundary() {
-  // just zero out velocity components normal to the 6 cube faces
-  // top and bottom
-  for (int i = 0; i < v.sx; i++) {
-    for (int k = 0; k < v.sz; k++) {
-      v(i, 0, k) = 0;
-      v(i, 1, k) = 0;
-      v(i, v.sy - 1, k) = 0;
-      v(i, v.sy - 2, k) = 0;
-    }
-  }
-  // left and right
-  for (int j = 0; j < u.sy; j++) {
-    for (int k = 0; k < u.sz; k++) {
-      u(0, j, k) = 0;
-      u(1, j, k) = 0;
-      u(u.sx - 1, j, k) = 0;
-      u(u.sx - 2, j, k) = 0;
-    }
-  }
-  // front and back
-  for (int i = 0; i < w.sx; i++) {
-    for (int j = 0; j < w.sy; j++) {
-      w(i, j, 0) = 0;
-      w(i, j, 1) = 0;
-      w(i, j, w.sz - 1) = 0;
-      w(i, j, w.sz - 2) = 0;
+  for (int i = 0; i < marker.sx; i++) {
+    for (int j = 0; j < marker.sy; j++) {
+      for (int k = 0; k < marker.sz; k++) {
+        if (marker(i, j, k) == SOLID_CELL) {
+          u(i, j, k) = 0;
+          u(i + 1, j, k) = 0;
+          v(i, j, k) = 0;
+          v(i, j + 1, k) = 0;
+          w(i, j, k) = 0;
+          w(i, j, k + 1) = 0;
+        }
+      }
     }
   }
 }

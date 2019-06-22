@@ -11,66 +11,38 @@ void Simulation::populate_particles() {
   cx.clear();
   cy.clear();
   cz.clear();
+  add_dam_break();
+}
 
-  if (example_type == DAM_BREAK) {
-    add_dam_break();
-  } else if (example_type == CENTER_DROP) {
-    add_center_drop();
-  } else if (example_type == OPPOSITE_CORNERS) {
-    add_opp_corners();
-  } else {
-    std::cout << "panic" << std::endl;
+void Simulation::reseed_cell(int i, int j, int k) {
+  float base_x = i * grid.h;
+  float base_y = j * grid.h;
+  float base_z = k * grid.h;
+  for (int i = 0; i < 8; i++) {
+    float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
+    float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
+    float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
+    // add particles
+    particles.push_back(Particle(
+        glm::vec3(base_x + jitter_x, base_y + jitter_y, base_z + jitter_z),
+        glm::vec3(0, 0, 0)));
+    // APIC vectors
+    cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+    cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+    cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
   }
 }
 
-void Simulation::add_opp_corners() {
-  for (int x = grid.nx * 0.7; x < grid.nx * 0.95; x++) {
-    for (int y = grid.ny * 0.1; y < grid.ny * 0.8; y++) {
-      for (int z = grid.nz * 0.6; z < grid.nz * 0.95; z++) {
-        // for each cell, add 8 new jittered particles
-        float base_x = x * grid.h;
-        float base_y = y * grid.h;
-        float base_z = z * grid.h;
-        for (int i = 0; i < 8; i++) {
-          float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
-          float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
-          float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
-          // add particles
-          particles.push_back(
-              Particle(glm::vec3(base_x + jitter_x, base_y + jitter_y,
-                                 base_z + jitter_z),
-                       glm::vec3(-5.0f, 0, 0)));
-          // APIC vectors
-          cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-          cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-          cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        }
-      }
-    }
-  }
-
-  if (true)
-    return;
-  for (int x = grid.nx * 0.05; x < grid.nx * 0.3; x++) {
-    for (int y = grid.ny * 0.1; y < grid.ny * 0.8; y++) {
-      for (int z = grid.nz * 0.05; z < grid.nz * 0.4; z++) {
-        // for each cell, add 8 new jittered particles
-        float base_x = x * grid.h;
-        float base_y = y * grid.h;
-        float base_z = z * grid.h;
-        for (int i = 0; i < 8; i++) {
-          float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
-          float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
-          float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
-          // add particles
-          particles.push_back(
-              Particle(glm::vec3(base_x + jitter_x, base_y + jitter_y,
-                                 base_z + jitter_z),
-                       glm::vec3(5.0f, 0, 0)));
-          // APIC vectors
-          cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-          cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-          cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+void Simulation::reseed_particles() {
+  particles.clear();
+  cx.clear();
+  cy.clear();
+  cz.clear();
+  for (int i = 0; i < grid.marker.sx; i++) {
+    for (int j = 0; j < grid.marker.sy; j++) {
+      for (int k = 0; k < grid.marker.sz; k++) {
+        if (grid.marker(i, j, k) == FLUID_CELL) {
+          reseed_cell(i, j, k);
         }
       }
     }
@@ -80,54 +52,10 @@ void Simulation::add_opp_corners() {
 // dam break scenario
 void Simulation::add_dam_break() {
   for (int x = grid.nx * 0.75; x < grid.nx * 0.95; x++) {
-    for (int y = grid.ny * 0.2; y < grid.ny * 0.8; y++) {
+    for (int y = grid.ny * 0.1; y < grid.ny * 0.6; y++) {
       for (int z = grid.nz * 0.1; z < grid.nz * 0.9; z++) {
         // for each cell, add 8 new jittered particles
-        float base_x = x * grid.h;
-        float base_y = y * grid.h;
-        float base_z = z * grid.h;
-        for (int i = 0; i < 8; i++) {
-          float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
-          float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
-          float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
-          // add particles
-          particles.push_back(
-              Particle(glm::vec3(base_x + jitter_x, base_y + jitter_y,
-                                 base_z + jitter_z),
-                       glm::vec3(0, 0, 0)));
-          // APIC vectors
-          cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-          cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-          cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        }
-      }
-    }
-  }
-}
-
-// drop a rectangle into the center of the room
-void Simulation::add_center_drop() {
-  for (int x = grid.nx * 0.3; x < grid.nx * 0.7; x++) {
-    for (int y = grid.ny * 0.2; y < grid.ny * 0.8; y++) {
-      for (int z = grid.nz * 0.3; z < grid.nz * 0.7; z++) {
-        // for each cell, add 8 new jittered particles
-        float base_x = x * grid.h;
-        float base_y = y * grid.h;
-        float base_z = z * grid.h;
-        for (int i = 0; i < 8; i++) {
-          float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
-          float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
-          float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
-          // add particles
-          particles.push_back(
-              Particle(glm::vec3(base_x + jitter_x, base_y + jitter_y,
-                                 base_z + jitter_z),
-                       glm::vec3(0, 0, 0)));
-          // APIC vectors
-          cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-          cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-          cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        }
+        reseed_cell(x, y, z);
       }
     }
   }
@@ -410,6 +338,18 @@ void Simulation::advect(float dt) {
     p.position.x = glm::clamp(p.position.x, xmin, xmax);
     p.position.y = glm::clamp(p.position.y, ymin, ymax);
     p.position.z = glm::clamp(p.position.z, zmin, zmax);
+
+    // push out of solid obstacles
+    glm::vec3 coords;
+    glm::ivec3 index;
+    position_to_grid(p.position, glm::vec3(0.5, 0.5, 0.5), index, coords);
+    int pcount = 0;
+    while (grid.marker(index.x, index.y, index.z) == SOLID_CELL) {
+      p.position += glm::vec3(0, 1.0f, 0) * (1.0f - coords.y) * grid.h;
+      pcount++;
+      if (pcount > 3)
+        break;
+    }
   }
 }
 

@@ -71,7 +71,10 @@ public:
     dw.clear();
     count.clear();
 
-    marker.clear();
+    for (int i = 0; i < marker.size; i++) {
+      if (marker.data[i] != SOLID_CELL)
+        marker.data[i] = 0;
+    }
     phi.clear();
     pressure.clear();
     r.clear();

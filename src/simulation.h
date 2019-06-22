@@ -56,9 +56,9 @@ public:
   void save_mesh(std::string fname);
   // particle init methods
   void populate_particles();
+  void reseed_particles();
+  void reseed_cell(int i, int j, int k);
   void add_dam_break();
-  void add_center_drop();
-  void add_opp_corners();
   // auxillary methods
   void intialize_boundaries();
   void step_and_save(float t, std::string fname);

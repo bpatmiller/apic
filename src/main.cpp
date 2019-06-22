@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   bool e = false;
   bool a = false;
   std::string o;
-  int m = 2;
+  int m = APIC_MODE;
   int x = 0;
   int r = 30;
 
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     gui.init(2.0f, r, r, r, x);
     gui.simulation.mode = m;
     voxelize_mesh("mesh/dragon.ply", gui.simulation.grid,
-                  glm::vec3(1.0f, 1.0f, 1.0f));
+                  glm::vec3(0.5f, 0.1f, 1.0f), SOLID_CELL);
 
     while (!glfwWindowShouldClose(window)) {
       gui.update();
@@ -175,8 +175,14 @@ int main(int argc, char *argv[]) {
     sim.example_type = x;
     std::cout << ":: initializing grid" << std::endl;
     sim.init(2.0f, r, r, r);
-    std::cout << ":: initializing particles" << std::endl;
-    sim.populate_particles();
+    // std::cout << ":: importing mesh (solid)\n";
+    // voxelize_mesh("mesh/dragon.ply", sim.grid, glm::vec3(0.5f, 0.1f, 1.0f),
+    //               FLUID_CELL);
+    std::cout << ":: importing mesh (fluid)\n";
+    voxelize_mesh("mesh/dragon_l.ply", sim.grid, glm::vec3(1.0f, 0.75f, 1.0f),
+                  FLUID_CELL);
+    sim.reseed_particles();
+
     std::cout << ":: " << sim.particles.size() << " particles added"
               << std::endl;
     std::cout << ":: running simulation" << std::endl;
