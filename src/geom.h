@@ -1,7 +1,9 @@
 #pragma once
 
 #include "aabb_triangle_overlap.h"
-#include "simulation.h"
+#include "grid.h"
+#include <fstream>
+#include <iostream>
 
 // filename of .ply file
 // grid to export voxels to

@@ -19,6 +19,23 @@
 #define CENTER_DROP 1
 #define OPPOSITE_CORNERS 2
 
+class Emitter {
+public:
+  Emitter(){};
+  Emitter(glm::vec3 p, glm::vec3 d, glm::vec3 s, float r, float rad) {
+    position = p;
+    direction = d;
+    scale = s;
+    rate = r;
+    radius = rad;
+  }
+  glm::vec3 position;
+  glm::vec3 direction;
+  glm::vec3 scale; // physical scale of object
+  float rate;
+  float radius;
+};
+
 class Simulation {
 public:
   // data
@@ -32,9 +49,12 @@ public:
   int mode = APIC_MODE;
   int example_type = DAM_BREAK;
   float flip_blend = 0.99f;
+  bool dirty = true;
   // mesh data
   std::vector<glm::vec3> vertices;
   std::vector<glm::uvec3> indices;
+  // emitter data
+  std::vector<Emitter> emitters;
 
   Simulation(){};
 
@@ -59,6 +79,7 @@ public:
   void reseed_particles();
   void reseed_cell(int i, int j, int k);
   void add_dam_break();
+  void emit_particles();
   // auxillary methods
   void intialize_boundaries();
   void step_and_save(float t, std::string fname);

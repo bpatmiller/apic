@@ -17,9 +17,9 @@
     -o to set output directory
 -change cmake error flags
 -refactor sweep code (did not do this, sweep code is fine)
+-import obstacles
 
 ## todo
--import obstacles
 -emitters
 -refactor export code
 -optimization

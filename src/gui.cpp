@@ -1,5 +1,4 @@
 #include "gui.h"
-#include <glm/gtx/string_cast.hpp>
 
 const glm::vec3 FORWARD(0, 0, -1);
 const glm::vec3 SIDE(1, 0, 0);
@@ -29,14 +28,9 @@ void GUI::create_sphere(float Radius, std::vector<glm::vec3> &s_vertices) {
   }
 }
 
-void GUI::init(float lx_, int nx_, int ny_, int nz_, int x) {
+void GUI::init(float lx_, int nx_, int ny_, int nz_) {
   // set up simulation
   simulation.init(lx_, nx_, ny_, nz_);
-  simulation.example_type = x;
-  simulation.populate_particles();
-  simulation.step_frame(0.0001f);
-  std::cout << ":: running simulation with " << simulation.particles.size()
-            << " particles" << std::endl;
 
   // compile shaders
   fluid_program =
@@ -131,9 +125,13 @@ void GUI::update_camera() {
   orientation = qyaw * qpitch;
 }
 
-void GUI::update() { update(false); }
+// void GUI::update() { update(timestep, false); }
 
-void GUI::update(bool force) {
+// void GUI::update(float t) { update(t, false); }
+
+void GUI::update(float t, bool force) {
+  if (t < 0)
+    t = timestep;
   // update camera vars
   glfwGetWindowSize(window, &window_dims.x, &window_dims.y);
   glViewport(0, 0, window_dims.x, window_dims.y);
@@ -170,8 +168,14 @@ void GUI::update(bool force) {
   // step the simulation, copy the new particle data
   if (keyHeld[GLFW_KEY_P] || force) {
     dirty = true;
-    simulation.step_frame(timestep);
-    fluid.ib.update(simulation.particles, 0);
+    simulation.step_frame(t);
+    if (simulation.dirty) {
+      fluid.setLayout({3, 1, 3, 1}, true);
+      fluid.ib.set(simulation.particles);
+      simulation.dirty = false;
+    } else {
+      fluid.ib.update(simulation.particles, 0);
+    }
   }
 
   if (draw_mesh) {
@@ -179,6 +183,7 @@ void GUI::update(bool force) {
 
     if (dirty) {
       simulation.generate_mesh();
+
       mesh_vao.setLayout({3}, false);
       mesh_vao.vb.set(simulation.vertices);
     }

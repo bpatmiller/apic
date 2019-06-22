@@ -24,9 +24,6 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
     std::cout << "polygonizing particles and exporting mesh\n";
     gui->simulation.generate_mesh();
     gui->simulation.save_mesh(std::string("mesh.ply"));
-  } else if (key == GLFW_KEY_E && action == GLFW_RELEASE) {
-    std::cout << "exporting particles" << std::endl;
-    gui->simulation.save_voxels(std::string("unnamed.ply"));
   } else if (key == GLFW_KEY_G && action == GLFW_RELEASE) {
     gui->draw_grid = !gui->draw_grid;
   } else if (key == GLFW_KEY_V && action == GLFW_RELEASE) {
@@ -78,7 +75,6 @@ int main(int argc, char *argv[]) {
   int opt;
   bool g = false;
   float t = 0.0f;
-  bool e = false;
   bool a = false;
   std::string o;
   int m = APIC_MODE;
@@ -87,7 +83,6 @@ int main(int argc, char *argv[]) {
 
   std::string help_text = "  -g to enable graphical mode\n\
   -t to set a time limit (for non graphical mode)\n\
-  -e to export files (for non-graphical mode)\n\
   -a to export each frame (for non-graphical mode)\n\
   -o to set output filename (to be created in the out/ directory)\n\
   -m to set mode (1 pic, 2 pic/flip, 3 apic)\n\
@@ -105,10 +100,6 @@ int main(int argc, char *argv[]) {
       t = std::atof(optarg);
       std::cout << ":: simulation time set to " << optarg << " seconds"
                 << std::endl;
-      break;
-    case 'e':
-      e = true;
-      std::cout << ":: exporting frame enabled" << std::endl;
       break;
     case 'a':
       a = true;
@@ -157,10 +148,11 @@ int main(int argc, char *argv[]) {
     glfwSetCursorPosCallback(window, MousePosCallback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
-    gui.init(2.0f, r, r, r, x);
+    gui.init(2.0f, r, r, r);
     gui.simulation.mode = m;
-    voxelize_mesh("mesh/dragon.ply", gui.simulation.grid,
-                  glm::vec3(0.5f, 0.1f, 1.0f), SOLID_CELL);
+    // gui.simulation.example_type = x;
+    gui.simulation.populate_particles();
+    gui.update(1e-6f, true);
 
     while (!glfwWindowShouldClose(window)) {
       gui.update();
@@ -175,22 +167,24 @@ int main(int argc, char *argv[]) {
     sim.example_type = x;
     std::cout << ":: initializing grid" << std::endl;
     sim.init(2.0f, r, r, r);
-    // std::cout << ":: importing mesh (solid)\n";
-    // voxelize_mesh("mesh/dragon.ply", sim.grid, glm::vec3(0.5f, 0.1f, 1.0f),
+    std::cout << ":: importing mesh (solid)\n";
+    voxelize_mesh("mesh/dragon.ply", sim.grid, glm::vec3(1.0f, 0.25f, 1.0f),
+                  SOLID_CELL);
+    // std::cout << ":: importing mesh (fluid)\n";
+    // voxelize_mesh("mesh/dragon_l.ply", sim.grid, glm::vec3(1.0f,
+    // 0.75f, 1.0f),
     //               FLUID_CELL);
-    std::cout << ":: importing mesh (fluid)\n";
-    voxelize_mesh("mesh/dragon_l.ply", sim.grid, glm::vec3(1.0f, 0.75f, 1.0f),
-                  FLUID_CELL);
-    sim.reseed_particles();
+    // sim.reseed_particles();
+    sim.grid.gravity = -2.0f;
+    sim.emitters.push_back(Emitter(glm::vec3(1.0f, 1.9f, 1.0f),
+                                   glm::vec3(0.0f, 0.0f, 0.0f),
+                                   glm::vec3(1.0f, 0.01f, 1.0f), 8, 0.2f));
 
     std::cout << ":: " << sim.particles.size() << " particles added"
               << std::endl;
     std::cout << ":: running simulation" << std::endl;
     if (a) {
       sim.step_and_save(t, o);
-    } else if (e) {
-      sim.step_frame(t);
-      sim.save_particles(o);
     }
   }
   std::cout << ":: simulation complete" << std::endl;

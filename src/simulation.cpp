@@ -31,6 +31,7 @@ void Simulation::reseed_cell(int i, int j, int k) {
     cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
     cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
   }
+  dirty = true;
 }
 
 void Simulation::reseed_particles() {
@@ -44,6 +45,29 @@ void Simulation::reseed_particles() {
         if (grid.marker(i, j, k) == FLUID_CELL) {
           reseed_cell(i, j, k);
         }
+      }
+    }
+  }
+}
+
+void Simulation::emit_particles() {
+  for (auto &e : emitters) {
+    for (int i = 0, imax = (int)e.rate; i < imax; i++) {
+      float base_x = e.position.x;
+      float base_y = e.position.y;
+      float base_z = e.position.z;
+      for (int i = 0; i < 8; i++) {
+        float jitter_x = glm::linearRand(-e.radius, e.radius) * e.scale.x;
+        float jitter_y = glm::linearRand(-e.radius, e.radius) * e.scale.y;
+        float jitter_z = glm::linearRand(-e.radius, e.radius) * e.scale.z;
+        // add particles
+        particles.push_back(Particle(
+            glm::vec3(base_x + jitter_x, base_y + jitter_y, base_z + jitter_z),
+            e.direction));
+        // APIC vectors
+        cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+        cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+        cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
       }
     }
   }
@@ -397,6 +421,7 @@ void Simulation::intialize_boundaries() {
 }
 
 void Simulation::advance(float dt) {
+  emit_particles();
   for (int i = 0; i < 5; i++)
     advect(0.2 * dt);
   particles_to_grid();
@@ -424,77 +449,6 @@ void Simulation::step_frame(float time) {
   }
 }
 
-void Simulation::save_particles(std::string fname) {
-  std::ofstream ofile(std::string("out/p_") + fname);
-  // header
-  ofile << "ply\n";
-  ofile << "format ascii 1.0\n";
-  ofile << "element vertex " << particles.size() << "\n";
-  ofile << "property float x\n";
-  ofile << "property float y\n";
-  ofile << "property float z\n";
-  ofile << "end_header\n";
-
-  for (auto &p : particles) {
-    ofile << p.position.x << " " << p.position.z << " " << p.position.y << "\n";
-  }
-  ofile.close();
-  std::cout << "   saved " << std::string("out/") + fname << std::endl;
-}
-
-void Simulation::save_voxels(std::string fname) {
-  std::ofstream ofile(std::string("out/") + fname);
-  int n = 0;
-  for (int x = 0; x < grid.marker.size; x++) {
-    if (grid.marker.data[x] == FLUID_CELL)
-      n++;
-  }
-  // header
-  ofile << "ply\n";
-  ofile << "format ascii 1.0\n";
-  ofile << "element vertex " << n << "\n";
-  ofile << "property float x\n";
-  ofile << "property float y\n";
-  ofile << "property float z\n";
-  ofile << "end_header\n";
-
-  for (int i = 0; i < grid.marker.sx; i++) {
-    for (int j = 0; j < grid.marker.sy; j++) {
-      for (int k = 0; k < grid.marker.sz; k++) {
-        if (grid.marker(i, j, k) == FLUID_CELL)
-          ofile << i * grid.h << " " << k * grid.h << " " << j * grid.h << "\n";
-      }
-    }
-  }
-  ofile.close();
-  std::cout << "   saved " << std::string("out/") + fname << std::endl;
-}
-
-void Simulation::save_mesh(std::string fname) {
-  std::ofstream ofile(std::string("out/m_") + fname);
-
-  ofile << "ply\n";
-  ofile << "format ascii 1.0\n";
-  ofile << "element vertex " << vertices.size() << "\n";
-  ofile << "property float x\n";
-  ofile << "property float y\n";
-  ofile << "property float z\n";
-  ofile << "element face " << indices.size() << "\n";
-  ofile << "property list uchar int vertex_index\n";
-  ofile << "end_header\n";
-
-  for (auto &v : vertices) {
-    ofile << v.x << " " << v.z << " " << v.y << "\n";
-  }
-  for (auto &i : indices) {
-    ofile << "3 " << i.x << " " << i.y << " " << i.z << "\n";
-  }
-
-  ofile.close();
-  std::cout << "saved out/m_" << fname << " containing " << vertices.size()
-            << " vertices\n";
-}
-
 void Simulation::step_and_save(float t, std::string fname) {
   float tm = 0.0f;
   float tstep = 0.05f;
@@ -507,63 +461,5 @@ void Simulation::step_and_save(float t, std::string fname) {
     generate_mesh();
     save_mesh(fname + std::string("_") + std::to_string(tm) +
               std::string(".ply"));
-  }
-}
-
-void Simulation::generate_mesh() {
-  std::vector<glm::vec3> positions(8);
-  std::vector<float> values(8);
-  int vert_count = 0;
-  float offs = 0.5f * grid.h;
-
-  vertices.clear();
-  indices.clear();
-
-  int elements[8] = {0, 3, 4, 7, 1, 2, 5, 6};
-
-  for (int i = 0; i < grid.phi.sx - 1; i++) {
-    for (int j = 0; j < grid.phi.sy - 1; j++) {
-      for (int k = 0; k < grid.phi.sz - 1; k++) {
-        positions.clear();
-        values.clear();
-        // pass in locations and values
-        // of 8 neighboring sample points
-        positions[elements[0]] =
-            glm::vec3(i * grid.h + offs, j * grid.h + offs, k * grid.h + offs);
-        positions[elements[1]] = glm::vec3(i * grid.h + offs, j * grid.h + offs,
-                                           (k + 1) * grid.h + offs);
-        positions[elements[2]] = glm::vec3(
-            i * grid.h + offs, (j + 1) * grid.h + offs, k * grid.h + offs);
-        positions[elements[3]] =
-            glm::vec3(i * grid.h + offs, (j + 1) * grid.h + offs,
-                      (k + 1) * grid.h + offs);
-        positions[elements[4]] = glm::vec3(
-            (i + 1) * grid.h + offs, j * grid.h + offs, k * grid.h + offs);
-        positions[elements[5]] =
-            glm::vec3((i + 1) * grid.h + offs, j * grid.h + offs,
-                      (k + 1) * grid.h + offs);
-        positions[elements[6]] =
-            glm::vec3((i + 1) * grid.h + offs, (j + 1) * grid.h + offs,
-                      k * grid.h + offs);
-        positions[elements[7]] =
-            glm::vec3((i + 1) * grid.h + offs, (j + 1) * grid.h + offs,
-                      (k + 1) * grid.h + offs);
-
-        values[elements[0]] = glm::clamp(grid.phi(i, j, k), -0.5f, 0.5f);
-        values[elements[1]] = glm::clamp(grid.phi(i, j, k + 1), -0.5f, 0.5f);
-        values[elements[2]] = glm::clamp(grid.phi(i, j + 1, k), -0.5f, 0.5f);
-        values[elements[3]] =
-            glm::clamp(grid.phi(i, j + 1, k + 1), -0.5f, 0.5f);
-        values[elements[4]] = glm::clamp(grid.phi(i + 1, j, k), -0.5f, 0.5f);
-        values[elements[5]] =
-            glm::clamp(grid.phi(i + 1, j, k + 1), -0.5f, 0.5f);
-        values[elements[6]] =
-            glm::clamp(grid.phi(i + 1, j + 1, k), -0.5f, 0.5f);
-        values[elements[7]] =
-            glm::clamp(grid.phi(i + 1, j + 1, k + 1), -0.5f, 0.5f);
-
-        polygonize(positions, values, vert_count, indices, vertices);
-      }
-    }
   }
 }

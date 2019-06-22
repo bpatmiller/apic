@@ -6,14 +6,14 @@
 #include "gl/vao.h"
 #include "simulation.h"
 #include <GLFW/glfw3.h>
+#include <glm/gtx/string_cast.hpp>
 #include <map>
 
 class GUI {
 public:
   GUI(GLFWwindow *w) { window = w; }
-  void init(float lx_, int nx_, int ny_, int nz_, int x);
-  void update(bool force);
-  void update();
+  void init(float lx_, int nx_, int ny_, int nz_);
+  void update(float t = -1, bool force = false);
   void update_camera();
 
   // simulation data
