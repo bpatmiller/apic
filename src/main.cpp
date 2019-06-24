@@ -31,23 +31,20 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action,
   } else if (key == GLFW_KEY_B && action == GLFW_RELEASE) {
     gui->draw_particles = !gui->draw_particles;
   } else if (key == GLFW_KEY_1 && action == GLFW_RELEASE) {
-    gui->simulation.mode = PIC_MODE;
+    gui->simulation.mode = PIC;
     std::cout << "PIC mode" << std::endl;
   } else if (key == GLFW_KEY_2 && action == GLFW_RELEASE) {
-    gui->simulation.mode = PIC_FLIP_MODE;
+    gui->simulation.mode = PIC_FLIP;
     std::cout << "PIC/FLIP mode (" << gui->simulation.flip_blend << ")"
               << std::endl;
   } else if (key == GLFW_KEY_3 && action == GLFW_RELEASE) {
-    gui->simulation.mode = APIC_MODE;
+    gui->simulation.mode = APIC;
     std::cout << "APIC mode" << std::endl;
   } else if (key == GLFW_KEY_O && action == GLFW_RELEASE) {
     std::cout << "resetting simulation" << std::endl;
     gui->simulation.reset();
     // manually update one frame
     gui->update(true);
-  } else if (key == GLFW_KEY_MINUS && action == GLFW_RELEASE) {
-    std::cout << "cycling example type" << std::endl;
-    gui->simulation.example_type = ((gui->simulation.example_type + 1) % 3);
   }
 
   if (action == GLFW_PRESS) {
@@ -77,7 +74,7 @@ int main(int argc, char *argv[]) {
   float t = 0.0f;
   bool a = false;
   std::string o;
-  int m = APIC_MODE;
+  SimType m = APIC;
   int x = 0;
   int r = 30;
 
@@ -110,7 +107,7 @@ int main(int argc, char *argv[]) {
       std::cout << ":: output filename set to " << o << std::endl;
       break;
     case 'm':
-      m = std::atoi(optarg) - 1;
+      m = static_cast<SimType>(std::atoi(optarg));
       std::cout << ":: mode set to " << m << std::endl;
       break;
     case 'x':
@@ -150,9 +147,9 @@ int main(int argc, char *argv[]) {
 
     gui.init(2.0f, r, r, r);
     gui.simulation.mode = m;
-    std::cout << ":: importing mesh (solid)\n";
-    voxelize_mesh("mesh/dragon.ply", gui.simulation.grid,
-                  glm::vec3(1.0f, 0.25f, 1.0f), SOLID_CELL);
+    // std::cout << ":: importing mesh (solid)\n";
+    // voxelize_mesh("mesh/dragon.ply", gui.simulation.grid,
+    //               glm::vec3(1.0f, 0.25f, 1.0f), SOLID_CELL);
     gui.simulation.populate_particles();
     gui.update(1e-6f, true);
 
@@ -166,7 +163,6 @@ int main(int argc, char *argv[]) {
   else {
     Simulation sim;
     sim.mode = m;
-    sim.example_type = x;
     std::cout << ":: initializing grid" << std::endl;
     sim.init(2.0f, r, r, r);
     std::cout << ":: importing mesh (solid)\n";

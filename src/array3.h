@@ -44,6 +44,7 @@ template <class T> struct Array3 {
     clear();
   }
 
+  // returns largest absolute value in the array
   T infnorm() const {
     T n = 0;
     for (int i = 0; i < size; i++) {
@@ -63,6 +64,12 @@ template <class T> struct Array3 {
   void inc(double s, Array3 &other) {
     for (int i = 0; i < size; i++) {
       data[i] += s * other.data[i];
+    }
+  }
+
+  void scale(float s) {
+    for (int i = 0; i < size; i++) {
+      data[i] *= s;
     }
   }
 

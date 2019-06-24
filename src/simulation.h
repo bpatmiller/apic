@@ -11,13 +11,14 @@
 #include <iostream>
 #include <vector>
 
-#define PIC_MODE 0
-#define PIC_FLIP_MODE 1
-#define APIC_MODE 2
+#define U_OFFSET glm::vec3(0.5f, 0, 0)
+#define V_OFFSET glm::vec3(0, 0.5f, 0)
+#define W_OFFSET glm::vec3(0, 0, 0.5f)
+#define CENTER_OFFSET glm::vec3(0.5f, 0.5f, 0.5f)
 
-#define DAM_BREAK 0
-#define CENTER_DROP 1
-#define OPPOSITE_CORNERS 2
+#define EPS 0.001
+
+enum SimType { PIC = 1, PIC_FLIP = 2, APIC = 3 };
 
 class Emitter {
 public:
@@ -46,8 +47,7 @@ public:
   std::vector<glm::vec3> cz;
   std::vector<glm::mat3x3> d; // using to validate the weight gradient
   // settings
-  int mode = APIC_MODE;
-  int example_type = DAM_BREAK;
+  SimType mode = APIC;
   float flip_blend = 0.99f;
   bool dirty = true;
   // reseed data
@@ -83,6 +83,7 @@ public:
   void reseed_cell(int i, int j, int k);
   void add_dam_break();
   void add_center_drop();
+  void add_pool();
   void emit_particles();
   // auxillary methods
   void intialize_boundaries();

@@ -1,105 +1,5 @@
 #include "simulation.h"
 
-#define U_OFFSET glm::vec3(0.5f, 0, 0)
-#define V_OFFSET glm::vec3(0, 0.5f, 0)
-#define W_OFFSET glm::vec3(0, 0, 0.5f)
-
-#define EPS 0.001
-
-void Simulation::populate_particles() {
-  reseed_count = 0;
-  particles.clear();
-  cx.clear();
-  cy.clear();
-  cz.clear();
-  // add_dam_break();
-  add_center_drop();
-}
-
-void Simulation::reseed_cell(int i, int j, int k) {
-  if (grid.marker(i, j, k) != SOLID_CELL) {
-    float base_x = i * grid.h;
-    float base_y = j * grid.h;
-    float base_z = k * grid.h;
-    for (int i = 0; i < 8; i++) {
-      float jitter_x = glm::linearRand(0 + EPS, grid.h - EPS);
-      float jitter_y = glm::linearRand(0 + EPS, grid.h - EPS);
-      float jitter_z = glm::linearRand(0 + EPS, grid.h - EPS);
-      // add particles
-      particles.push_back(Particle(
-          glm::vec3(base_x + jitter_x, base_y + jitter_y, base_z + jitter_z),
-          glm::vec3(0, 0, 0)));
-      // APIC vectors
-      cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-      cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-      cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-    }
-    dirty = true;
-  }
-}
-
-void Simulation::reseed_particles() {
-  reseed_count = 0;
-  particles.clear();
-  cx.clear();
-  cy.clear();
-  cz.clear();
-  for (int i = 0; i < grid.marker.sx; i++) {
-    for (int j = 0; j < grid.marker.sy; j++) {
-      for (int k = 0; k < grid.marker.sz; k++) {
-        if (grid.marker(i, j, k) == FLUID_CELL) {
-          reseed_cell(i, j, k);
-        }
-      }
-    }
-  }
-}
-
-void Simulation::emit_particles() {
-  for (auto &e : emitters) {
-    for (int i = 0, imax = (int)e.rate; i < imax; i++) {
-      float base_x = e.position.x;
-      float base_y = e.position.y;
-      float base_z = e.position.z;
-      for (int i = 0; i < 8; i++) {
-        float jitter_x = glm::linearRand(-e.radius, e.radius) * e.scale.x;
-        float jitter_y = glm::linearRand(-e.radius, e.radius) * e.scale.y;
-        float jitter_z = glm::linearRand(-e.radius, e.radius) * e.scale.z;
-        // add particles
-        particles.push_back(Particle(
-            glm::vec3(base_x + jitter_x, base_y + jitter_y, base_z + jitter_z),
-            e.direction));
-        // APIC vectors
-        cx.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        cy.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        cz.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-      }
-    }
-  }
-}
-
-void Simulation::add_dam_break() {
-  for (int x = grid.nx * 0.75; x < grid.nx * 0.95; x++) {
-    for (int y = grid.ny * 0.1; y < grid.ny * 0.6; y++) {
-      for (int z = grid.nz * 0.1; z < grid.nz * 0.9; z++) {
-        // for each cell, add 8 new jittered particles
-        reseed_cell(x, y, z);
-      }
-    }
-  }
-}
-
-void Simulation::add_center_drop() {
-  for (int x = grid.nx * 0.3; x < grid.nx * 0.7; x++) {
-    for (int y = grid.ny * 0.5; y < grid.ny * 0.8; y++) {
-      for (int z = grid.nz * 0.3; z < grid.nz * 0.7; z++) {
-        // for each cell, add 8 new jittered particles
-        reseed_cell(x, y, z);
-      }
-    }
-  }
-}
-
 // given a position, return the trilinear interpolation
 // of the velocity field at that position
 glm::vec3 Simulation::trilerp_uvw(glm::vec3 p) {
@@ -218,7 +118,7 @@ void Simulation::particles_to_grid() {
     glm::vec3 coords;
     position_to_grid(p.position, U_OFFSET, index, coords);
     grid_add_quantities(grid.u, p.velocity.x, index, coords);
-    if (mode == APIC_MODE) {
+    if (mode == APIC) {
       affine_set(grid.u, cx[i], index, coords);
     }
   }
@@ -241,7 +141,7 @@ void Simulation::particles_to_grid() {
     glm::vec3 coords;
     position_to_grid(p.position, V_OFFSET, index, coords);
     grid_add_quantities(grid.v, p.velocity.y, index, coords);
-    if (mode == APIC_MODE) {
+    if (mode == APIC) {
       affine_set(grid.v, cy[i], index, coords);
     }
   }
@@ -265,7 +165,7 @@ void Simulation::particles_to_grid() {
     glm::vec3 coords;
     position_to_grid(p.position, W_OFFSET, index, coords);
     grid_add_quantities(grid.w, p.velocity.z, index, coords);
-    if (mode == APIC_MODE) {
+    if (mode == APIC) {
       affine_set(grid.w, cz[i], index, coords);
     }
   }
@@ -326,7 +226,7 @@ glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
 
 void Simulation::grid_to_particles() {
   // pic flip velocity differences
-  if (mode == PIC_FLIP_MODE) {
+  if (mode == PIC_FLIP) {
     for (int nu = 0; nu < grid.u.size; nu++) {
       grid.du.data[nu] = grid.u.data[nu] - grid.du.data[nu];
     }
@@ -340,12 +240,12 @@ void Simulation::grid_to_particles() {
 
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
-    if (mode == PIC_FLIP_MODE) {
+    if (mode == PIC_FLIP) {
       p.velocity = (1.0f - flip_blend) * trilerp_uvw(p.position) +
                    flip_blend * (p.velocity + trilerp_dudvdw(p.position));
     } else {
       p.velocity = trilerp_uvw(p.position);
-      if (mode == APIC_MODE) {
+      if (mode == APIC) {
         // transfer C to particles
         glm::ivec3 index;
         glm::vec3 coords;
@@ -387,7 +287,7 @@ void Simulation::advect(float dt) {
     // push out of solid obstacles
     glm::vec3 coords;
     glm::ivec3 index;
-    position_to_grid(p.position, glm::vec3(0.5, 0.5, 0.5), index, coords);
+    position_to_grid(p.position, CENTER_OFFSET, index, coords);
     if (grid.marker(index.x, index.y, index.z) == SOLID_CELL) {
       // reesed particles elsewhere
       glm::ivec4 best_candidate = candidates.back();
@@ -416,7 +316,7 @@ void Simulation::mark_cells() {
   glm::ivec3 index;
   glm::vec3 coords;
   for (Particle &p : particles) {
-    position_to_grid(p.position, glm::vec3(0.5f, 0.5f, 0.5f), index, coords);
+    position_to_grid(p.position, CENTER_OFFSET, index, coords);
     grid.marker(index.x, index.y, index.z) = FLUID_CELL;
   }
 }
@@ -453,7 +353,7 @@ void Simulation::make_candidate_reseeds() {
   for (auto &p : particles) {
     glm::vec3 coords;
     glm::ivec3 index;
-    position_to_grid(p.position, glm::vec3(0.5, 0.5, 0.5), index, coords);
+    position_to_grid(p.position, CENTER_OFFSET, index, coords);
     grid_add_quantities_constant(grid.pc, 1, index, coords);
   }
 
@@ -494,14 +394,10 @@ void Simulation::advance(float dt) {
   grid.add_gravity(dt);
   mark_cells();
   grid.compute_phi();
-  grid.extend_velocity();
   grid.enforce_boundary();
   grid.project(dt);
   grid.extend_velocity();
   grid_to_particles();
-  // std::printf("(%f%%) reseed count: %i\n",
-  //             100.0f * (float)reseed_count / (float)particles.size(),
-  //             reseed_count);
 }
 
 void Simulation::step_frame(float time) {
