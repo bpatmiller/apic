@@ -387,8 +387,7 @@ void Simulation::advance(float dt) {
   reseed_count = 0;
   emit_particles();
   make_candidate_reseeds();
-  for (int i = 0; i < 5; i++)
-    advect(0.2 * dt);
+  advect(dt);
   particles_to_grid();
   grid.save_velocity();
   grid.add_gravity(dt);
