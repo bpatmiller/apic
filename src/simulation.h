@@ -53,6 +53,7 @@ public:
   // reseed data
   std::vector<glm::ivec4> candidates;
   int reseed_count = 0;
+  bool reseed = false;
   // mesh data
   std::vector<glm::vec3> vertices;
   std::vector<glm::uvec3> indices;
@@ -80,10 +81,12 @@ public:
   // particle init methods
   void populate_particles();
   void reseed_particles();
-  void reseed_cell(int i, int j, int k);
+  void reseed_cell(int i, int j, int k, int id = 1, float mass = 1.0f,
+                   float viscosity = 1.0f);
   void add_dam_break();
   void add_center_drop();
   void add_pool();
+  void add_raleigh_taylor();
   void emit_particles();
   // auxillary methods
   void intialize_boundaries();
@@ -101,7 +104,8 @@ public:
   void position_to_grid(glm::vec3 p, glm::vec3 offset, glm::ivec3 &index,
                         glm::vec3 &coords);
   template <class T>
-  void grid_add_quantities(T &arr, float q, glm::ivec3 index, glm::vec3 coords);
+  void grid_add_quantities(T &arr, T &weights, float q, glm::ivec3 index,
+                           glm::vec3 coords, float mass);
   template <class T>
   void grid_add_quantities_constant(T &arr, float q, glm::ivec3 index,
                                     glm::vec3 coords);
@@ -109,6 +113,8 @@ public:
   glm::vec3 trilerp_dudvdw(glm::vec3 p);
   // APIC functions
   template <class T>
-  void affine_set(T &accum, glm::vec3 c, glm::ivec3 index, glm::vec3 coords);
-  glm::vec3 compute_C(Array3f &field, glm::ivec3 index, glm::vec3 coords);
+  void affine_set(T &accum, glm::vec3 c, glm::ivec3 index, glm::vec3 coords,
+                  float mass);
+  glm::vec3 compute_C(Array3f &field, glm::ivec3 index, glm::vec3 coords,
+                      float mass);
 };

@@ -282,13 +282,13 @@ void Grid::solve_x(float dt) {
   // populate triplets
   std::vector<Eigen::Triplet<double>> tripletList;
   tripletList.reserve(nf * 7);
-  double scale = dt / (density * h * h);
   for (int i = 0; i < r.sx; i++) {
     for (int j = 0; j < r.sy; j++) {
       for (int k = 0; k < r.sz; k++) {
         if (marker(i, j, k) == FLUID_CELL) {
           int index = fl_index(i, j, k);
           double aii = 0; // negative sum of nonsolid nbrs
+          double scale = dt / (density * h * h);
           solve_x_helper(tripletList, aii, dt, i, j, k, i + 1, j, k);
           solve_x_helper(tripletList, aii, dt, i, j, k, i - 1, j, k);
           solve_x_helper(tripletList, aii, dt, i, j, k, i, j + 1, k);
@@ -342,7 +342,6 @@ void Grid::solve_x(float dt) {
 
 // add the new pressure gradient to the velocity field
 void Grid::add_pressure_gradient(float dt) {
-  double scale = -dt / (density * h);
   // u
   for (int i = 2; i < u.sx - 2; i++) {
     for (int j = 1; j < u.sy - 1; j++) {
@@ -354,6 +353,7 @@ void Grid::add_pressure_gradient(float dt) {
               marker(i, j, k) == SOLID_CELL) {
             continue;
           } else {
+            double scale = -dt / (density * h);
             u(i, j, k) += scale * (pressure(i, j, k) - pressure(i - 1, j, k));
           }
         }
@@ -371,6 +371,7 @@ void Grid::add_pressure_gradient(float dt) {
               marker(i, j, k) == SOLID_CELL) {
             continue;
           } else {
+            double scale = -dt / (density * h);
             v(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j - 1, k));
           }
         }
@@ -388,6 +389,7 @@ void Grid::add_pressure_gradient(float dt) {
               marker(i, j, k) == SOLID_CELL) {
             continue;
           } else {
+            double scale = -dt / (density * h);
             w(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j, k - 1));
           }
         }

@@ -62,16 +62,17 @@ void Simulation::position_to_grid(glm::vec3 p, glm::vec3 offset,
 // index = lowest index of grid nodes to be added to
 // coords = coordinates relative to those lowest grid nodes (0.0-1.0)
 template <class T>
-void Simulation::grid_add_quantities(T &arr, float q, glm::ivec3 index,
-                                     glm::vec3 coords) {
+void Simulation::grid_add_quantities(T &arr, T &weights, float q,
+                                     glm::ivec3 index, glm::vec3 coords,
+                                     float mass) {
   for (int i = 0; i <= 1; i++) { // {0,1}
     for (int j = 0; j <= 1; j++) {
       for (int k = 0; k <= 1; k++) {
         float w = (1 - std::fabs(i - coords.x)) * // {1 - coords.x | coords.x}
                   (1 - std::fabs(j - coords.y)) * // {""}
                   (1 - std::fabs(k - coords.z));  //{""}
-        arr(index.x + i, index.y + j, index.z + k) += w * q; //{0,1}
-        grid.count(index.x + i, index.y + j, index.z + k) += w;
+        arr(index.x + i, index.y + j, index.z + k) += mass * w * q; //{0,1}
+        weights(index.x + i, index.y + j, index.z + k) += mass * w;
       }
     }
   }
@@ -91,7 +92,7 @@ void Simulation::grid_add_quantities_constant(T &arr, float q, glm::ivec3 index,
 
 template <class T>
 void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
-                            glm::vec3 coords) {
+                            glm::vec3 coords, float mass) {
   for (int i = 0; i <= 1; i++) { // {0,1}
     for (int j = 0; j <= 1; j++) {
       for (int k = 0; k <= 1; k++) {
@@ -100,7 +101,7 @@ void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
                   (1 - std::fabs(k - coords.z));  //{""}
         float coef = glm::dot(
             c, glm::vec3(i - coords.x, j - coords.y, k - coords.z) * grid.h);
-        accum(index.x + i, index.y + j, index.z + k) += w * coef; //{0,1}
+        accum(index.x + i, index.y + j, index.z + k) += mass * w * coef; //{0,1}
       }
     }
   }
@@ -111,46 +112,46 @@ void Simulation::affine_set(T &accum, glm::vec3 c, glm::ivec3 index,
 void Simulation::particles_to_grid() {
   // u
   grid.u.clear();
-  grid.count.clear();
+  grid.u_w.clear();
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
     glm::ivec3 index;
     glm::vec3 coords;
     position_to_grid(p.position, U_OFFSET, index, coords);
-    grid_add_quantities(grid.u, p.velocity.x, index, coords);
+    grid_add_quantities(grid.u, grid.u_w, p.velocity.x, index, coords, p.mass);
     if (mode == APIC) {
-      affine_set(grid.u, cx[i], index, coords);
+      affine_set(grid.u, cx[i], index, coords, p.mass);
     }
   }
   // average velocities
   for (int i = 0; i < grid.u.sx; i++) {
     for (int j = 0; j < grid.u.sy; j++) {
       for (int k = 0; k < grid.u.sz; k++) {
-        if (grid.count(i, j, k) != 0)
-          grid.u(i, j, k) /= grid.count(i, j, k);
+        if (grid.u_w(i, j, k) != 0)
+          grid.u(i, j, k) /= grid.u_w(i, j, k);
       }
     }
   }
 
   // v
   grid.v.clear();
-  grid.count.clear();
+  grid.v_w.clear();
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
     glm::ivec3 index;
     glm::vec3 coords;
     position_to_grid(p.position, V_OFFSET, index, coords);
-    grid_add_quantities(grid.v, p.velocity.y, index, coords);
+    grid_add_quantities(grid.v, grid.v_w, p.velocity.y, index, coords, p.mass);
     if (mode == APIC) {
-      affine_set(grid.v, cy[i], index, coords);
+      affine_set(grid.v, cy[i], index, coords, p.mass);
     }
   }
   // average velocities
   for (int i = 0; i < grid.v.sx; i++) {
     for (int j = 0; j < grid.v.sy; j++) {
       for (int k = 0; k < grid.v.sz; k++) {
-        if (grid.count(i, j, k) != 0) {
-          grid.v(i, j, k) /= grid.count(i, j, k);
+        if (grid.v_w(i, j, k) != 0) {
+          grid.v(i, j, k) /= grid.v_w(i, j, k);
         }
       }
     }
@@ -158,23 +159,23 @@ void Simulation::particles_to_grid() {
 
   // w
   grid.w.clear();
-  grid.count.clear();
+  grid.w_w.clear();
   for (uint i = 0; i < particles.size(); i++) {
     Particle &p = particles[i];
     glm::ivec3 index;
     glm::vec3 coords;
     position_to_grid(p.position, W_OFFSET, index, coords);
-    grid_add_quantities(grid.w, p.velocity.z, index, coords);
+    grid_add_quantities(grid.w, grid.w_w, p.velocity.z, index, coords, p.mass);
     if (mode == APIC) {
-      affine_set(grid.w, cz[i], index, coords);
+      affine_set(grid.w, cz[i], index, coords, p.mass);
     }
   }
   // average velocities
   for (int i = 0; i < grid.w.sx; i++) {
     for (int j = 0; j < grid.w.sy; j++) {
       for (int k = 0; k < grid.w.sz; k++) {
-        if (grid.count(i, j, k) != 0)
-          grid.w(i, j, k) /= grid.count(i, j, k);
+        if (grid.w_w(i, j, k) != 0)
+          grid.w(i, j, k) /= grid.w_w(i, j, k);
       }
     }
   }
@@ -182,7 +183,7 @@ void Simulation::particles_to_grid() {
 
 // return gradient of weighted field
 glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
-                                glm::vec3 coords) {
+                                glm::vec3 coords, float mass) {
   glm::vec3 wg;
   glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
   glm::mat3x3 D = glm::mat3x3(0.0f);
@@ -216,7 +217,7 @@ glm::vec3 Simulation::compute_C(Array3f &field, glm::ivec3 index,
             glm::vec3(i - coords.x, j - coords.y, k - coords.z) * grid.h;
         assert(glm::determinant(D) != 0);
         wg = w * glm::inverse(D) * glm::vec3(v);
-        c += wg * field(index.x + i, index.y + j, index.z + k);
+        c += mass * wg * field(index.x + i, index.y + j, index.z + k);
       }
     }
   }
@@ -250,11 +251,11 @@ void Simulation::grid_to_particles() {
         glm::ivec3 index;
         glm::vec3 coords;
         position_to_grid(p.position, U_OFFSET, index, coords);
-        cx[i] = compute_C(grid.u, index, coords);
+        cx[i] = compute_C(grid.u, index, coords, p.mass);
         position_to_grid(p.position, V_OFFSET, index, coords);
-        cy[i] = compute_C(grid.v, index, coords);
+        cy[i] = compute_C(grid.v, index, coords, p.mass);
         position_to_grid(p.position, W_OFFSET, index, coords);
-        cz[i] = compute_C(grid.w, index, coords);
+        cz[i] = compute_C(grid.w, index, coords, p.mass);
       }
     }
   }
@@ -285,21 +286,23 @@ void Simulation::advect(float dt) {
     p.position.z = glm::clamp(p.position.z, zmin, zmax);
 
     // push out of solid obstacles
-    glm::vec3 coords;
-    glm::ivec3 index;
-    position_to_grid(p.position, CENTER_OFFSET, index, coords);
-    if (grid.marker(index.x, index.y, index.z) == SOLID_CELL) {
-      // reesed particles elsewhere
-      glm::ivec4 best_candidate = candidates.back();
-      p.position = glm::vec3((best_candidate.x + 0.5f) * grid.h,
-                             (best_candidate.y + 0.5f) * grid.h,
-                             (best_candidate.z + 0.5f) * grid.h);
-      // resample velocity and C
-      p.velocity = trilerp_uvw(p.position);
-      cx[i] = glm::vec3(0);
-      cy[i] = glm::vec3(0);
-      cz[i] = glm::vec3(0);
-      candidates.pop_back();
+    if (reseed) {
+      glm::vec3 coords;
+      glm::ivec3 index;
+      position_to_grid(p.position, CENTER_OFFSET, index, coords);
+      if (grid.marker(index.x, index.y, index.z) == SOLID_CELL) {
+        // reesed particles elsewhere
+        glm::ivec4 best_candidate = candidates.back();
+        p.position = glm::vec3((best_candidate.x + 0.5f) * grid.h,
+                               (best_candidate.y + 0.5f) * grid.h,
+                               (best_candidate.z + 0.5f) * grid.h);
+        // resample velocity and C
+        p.velocity = trilerp_uvw(p.position);
+        cx[i] = glm::vec3(0);
+        cy[i] = glm::vec3(0);
+        cz[i] = glm::vec3(0);
+        candidates.pop_back();
+      }
     }
   }
 }
@@ -354,7 +357,7 @@ void Simulation::make_candidate_reseeds() {
     glm::vec3 coords;
     glm::ivec3 index;
     position_to_grid(p.position, CENTER_OFFSET, index, coords);
-    grid_add_quantities_constant(grid.pc, 1, index, coords);
+    grid_add_quantities_constant(grid.pc, 1.0f, index, coords);
   }
 
   // loop through all fluid cells, if they
@@ -384,9 +387,11 @@ void Simulation::make_candidate_reseeds() {
 }
 
 void Simulation::advance(float dt) {
-  reseed_count = 0;
+  if (reseed) {
+    reseed_count = 0;
+    make_candidate_reseeds();
+  }
   emit_particles();
-  make_candidate_reseeds();
   advect(dt);
   particles_to_grid();
   grid.save_velocity();

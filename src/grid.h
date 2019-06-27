@@ -17,17 +17,16 @@ public:
   float h;              // size of each cell
   float density = 8.0f; //
 
-  Array3f u, v, w;    // velocities sampled at cell faces
-  Array3f du, dv, dw; // saved velocities for flip
-  Array3f count;      // keep track of the total weight of particles
-                      // (normalizing velocity field)
-  Array3i marker;     // designates air, fluid, solid
-  Array3f phi;        // signed distances from fluid
-  Array3d pressure;   // pressure at each grid cell
-  Array3d r;          // divergence at each grid cell
-  Array3i fl_index;   // gives each fluid cell an index (used for poission
-                      // construction)
-  Array3i pc;         // count used for reseeding
+  Array3f u, v, w;       // velocities sampled at cell faces
+  Array3f u_w, v_w, w_w; // keep track of the total weight of particles
+  Array3f du, dv, dw;    // saved velocities for flip
+  Array3i marker;        // designates air, fluid, solid
+  Array3f phi;           // signed distances from fluid
+  Array3d pressure;      // pressure at each grid cell
+  Array3d r;             // divergence at each grid cell
+  Array3i fl_index;      // gives each fluid cell an index (used for poission
+                         // construction)
+  Array3i pc;            // count used for reseeding
 
   // used for pressure solve
   Eigen::SparseMatrix<double> A;
@@ -51,10 +50,12 @@ public:
     u.init(nx + 1, ny, nz);
     v.init(nx, ny + 1, nz);
     w.init(nx, ny, nz + 1);
+    u_w.init(nx + 1, ny, nz);
+    v_w.init(nx, ny + 1, nz);
+    w_w.init(nx, ny, nz + 1);
     du.init(nx + 1, ny, nz);
     dv.init(nx, ny + 1, nz);
     dw.init(nx, ny, nz + 1);
-    count.init(nx + 1, ny + 1, nz + 1);
 
     marker.init(nx, ny, nz);
     phi.init(nx, ny, nz);
@@ -71,7 +72,9 @@ public:
     du.clear();
     dv.clear();
     dw.clear();
-    count.clear();
+    u_w.clear();
+    v_w.clear();
+    w_w.clear();
 
     for (int i = 0; i < marker.size; i++) {
       if (marker.data[i] != SOLID_CELL)
