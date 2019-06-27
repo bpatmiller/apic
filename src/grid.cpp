@@ -11,12 +11,14 @@ static inline int ijk_to_index(int i, int j, int k, Array3f &arr) {
 
 static inline double sqr(double d) { return std::pow(d, 2.0); }
 static inline float sqr(float f) { return std::pow(f, 2.0f); }
-
+static inline float three_max(float a, float b, float c) {
+  return std::max(a, std::max(b, c));
+}
 // ensure no particle moves more than grid.h
 float Grid::CFL() {
-  float maxsq = sqr(u.infnorm()) + sqr(w.infnorm()) + sqr(v.infnorm());
-  maxsq = std::max(maxsq, 1e-16f);
-  return h / std::sqrt(maxsq);
+  float max_v = three_max(u.infnorm(), w.infnorm(), v.infnorm());
+  max_v = std::max(max_v, 1e-16f);
+  return h / max_v;
 }
 
 void Grid::add_gravity(float dt) {
@@ -230,12 +232,12 @@ void Grid::enforce_boundary() {
     for (int j = 0; j < marker.sy; j++) {
       for (int k = 0; k < marker.sz; k++) {
         if (marker(i, j, k) == SOLID_CELL) {
-          u(i, j, k) = 0;
-          u(i + 1, j, k) = 0;
-          v(i, j, k) = 0;
-          v(i, j + 1, k) = 0;
-          w(i, j, k) = 0;
-          w(i, j, k + 1) = 0;
+          u(i, j, k) = std::min(0.0f, u(i, j, k));
+          u(i + 1, j, k) = std::max(0.0f, u(i + 1, j, k));
+          v(i, j, k) = std::min(0.0f, v(i, j, k));
+          v(i, j + 1, k) = std::max(0.0f, v(i, j + 1, k));
+          w(i, j, k) = std::min(0.0f, w(i, j, k));
+          w(i, j, k + 1) = std::max(0.0f, w(i, j, k + 1));
         }
       }
     }

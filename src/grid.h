@@ -10,23 +10,23 @@
 
 class Grid {
 public:
-  float gravity = -9.8;
+  float gravity = -9.8f; // force of gravity
 
   float lx, ly, lz;     // total length of grid
   float nx, ny, nz;     // number of cells per dimension
   float h;              // size of each cell
   float density = 8.0f; //
 
-  Array3f u, v, w;    // velocities
+  Array3f u, v, w;    // velocities sampled at cell faces
   Array3f du, dv, dw; // saved velocities for flip
-  Array3f count;      // keep track of how many particles
-                      // are near each grid node
+  Array3f count;      // keep track of the total weight of particles
                       // (normalizing velocity field)
-  Array3i marker;     // air, fluid, solid
-  Array3f phi;        // signed distances
-  Array3d pressure;   // self explanatory
-  Array3d r;          // divergence
-  Array3i fl_index;   // gives each fluid cell an index
+  Array3i marker;     // designates air, fluid, solid
+  Array3f phi;        // signed distances from fluid
+  Array3d pressure;   // pressure at each grid cell
+  Array3d r;          // divergence at each grid cell
+  Array3i fl_index;   // gives each fluid cell an index (used for poission
+                      // construction)
   Array3i pc;         // count used for reseeding
 
   // used for pressure solve

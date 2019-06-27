@@ -165,18 +165,15 @@ int main(int argc, char *argv[]) {
     sim.mode = m;
     std::cout << ":: initializing grid" << std::endl;
     sim.init(2.0f, r, r, r);
-    std::cout << ":: importing mesh (solid)\n";
-    voxelize_mesh("mesh/dragon.ply", sim.grid, glm::vec3(1.0f, 0.25f, 1.0f),
-                  SOLID_CELL);
+    // std::cout << ":: importing mesh (solid)\n";
+    // voxelize_mesh("mesh/dragon.ply", sim.grid, glm::vec3(1.0f, 0.25f, 1.0f),
+    //               SOLID_CELL);
     // std::cout << ":: importing mesh (fluid)\n";
     // voxelize_mesh("mesh/dragon_l.ply", sim.grid, glm::vec3(1.0f,
     // 0.75f, 1.0f),
     //               FLUID_CELL);
     // sim.reseed_particles();
-    sim.grid.gravity = -2.0f;
-    sim.emitters.push_back(Emitter(glm::vec3(1.0f, 1.9f, 1.0f),
-                                   glm::vec3(0.0f, 0.0f, 0.0f),
-                                   glm::vec3(1.0f, 0.01f, 1.0f), 8, 0.2f));
+    sim.populate_particles();
 
     std::cout << ":: " << sim.particles.size() << " particles added"
               << std::endl;
