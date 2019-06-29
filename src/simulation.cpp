@@ -314,6 +314,8 @@ void Simulation::mark_cells() {
       grid.marker.data[i] = AIR_CELL;
     }
   }
+  // clear per-fluid markers (since solids are not used with them)
+  grid.markers.clear();
 
   // mark liquid cells
   glm::ivec3 index;
@@ -321,6 +323,7 @@ void Simulation::mark_cells() {
   for (Particle &p : particles) {
     position_to_grid(p.position, CENTER_OFFSET, index, coords);
     grid.marker(index.x, index.y, index.z) = FLUID_CELL;
+    grid.markers(index.x, index.y, index.z)[p.id] = FLUID_CELL;
   }
 }
 
@@ -391,10 +394,10 @@ void Simulation::advance(float dt) {
     reseed_count = 0;
     make_candidate_reseeds();
   }
-  emit_particles();
   advect(dt);
   particles_to_grid();
-  grid.save_velocity();
+  if (mode == PIC_FLIP)
+    grid.save_velocity();
   grid.add_gravity(dt);
   mark_cells();
   grid.compute_phi();

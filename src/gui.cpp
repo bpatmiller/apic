@@ -199,15 +199,9 @@ void GUI::update(float t, bool force) {
       for (int i = 1; i < simulation.grid.phi.sx - 1; i++) {
         for (int j = 1; j < simulation.grid.phi.sy - 1; j++) {
           for (int k = 1; k < simulation.grid.phi.sz - 1; k++) {
-            if (simulation.grid.marker(i, j, k) == SOLID_CELL) {
-              grid_offsets[i + (simulation.grid.phi.sx * j) +
-                           (simulation.grid.phi.sx * simulation.grid.phi.sy *
-                            k)][3] = 1.0f;
-            } else {
-              grid_offsets[i + (simulation.grid.phi.sx * j) +
-                           (simulation.grid.phi.sx * simulation.grid.phi.sy *
-                            k)][3] = 0;
-            }
+            grid_offsets[i + (simulation.grid.phi.sx * j) +
+                         (simulation.grid.phi.sx * simulation.grid.phi.sy * k)]
+                        [3] = simulation.grid.ids(i, j, k);
           }
         }
       }

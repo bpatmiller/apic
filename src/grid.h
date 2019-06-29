@@ -12,16 +12,22 @@ class Grid {
 public:
   float gravity = -9.8f; // force of gravity
 
-  float lx, ly, lz;     // total length of grid
-  float nx, ny, nz;     // number of cells per dimension
-  float h;              // size of each cell
-  float density = 8.0f; //
+  float lx, ly, lz; // total length of grid
+  float nx, ny, nz; // number of cells per dimension
+  float h;          // size of each cell
+  // multiphase components
+  std::vector<float> densities;   // per fluid densities
+  std::vector<float> viscosities; // per fluid viscosities
+  Array3<glm::vec4> phis; // signed distances from fluid, split into components
+  Array3<glm::vec4> markers; // per fluid marker
+  Array3f phi;               // minimum of each fluid phi
+  Array3i ids;               // id of fluid at each grid cell (based on min phi)
+  int fluid_count = 0;
 
   Array3f u, v, w;       // velocities sampled at cell faces
   Array3f u_w, v_w, w_w; // keep track of the total weight of particles
   Array3f du, dv, dw;    // saved velocities for flip
   Array3i marker;        // designates air, fluid, solid
-  Array3f phi;           // signed distances from fluid
   Array3d pressure;      // pressure at each grid cell
   Array3d r;             // divergence at each grid cell
   Array3i fl_index;      // gives each fluid cell an index (used for poission
@@ -33,6 +39,14 @@ public:
   Eigen::VectorXd x, b;
 
   Grid() {}
+
+  // adds a fluid to the grid, returns its id
+  int add_fluid(float d, float v) {
+    fluid_count++;
+    densities.push_back(d);
+    viscosities.push_back(v);
+    return fluid_count - 1;
+  }
 
   void init(float lx_, int nx_, int ny_, int nz_) {
     // number of cells
@@ -58,7 +72,10 @@ public:
     dw.init(nx, ny, nz + 1);
 
     marker.init(nx, ny, nz);
+    phis.init(nx, ny, nz);
+    markers.init(nx, ny, nz);
     phi.init(nx, ny, nz);
+    ids.init(nx, ny, nz);
     pressure.init(nx, ny, nz);
     r.init(nx, ny, nz);
     fl_index.init(nx, ny, nz);
@@ -66,6 +83,7 @@ public:
   }
 
   void reset() {
+    fluid_count = 0;
     u.clear();
     v.clear();
     w.clear();
@@ -80,7 +98,10 @@ public:
       if (marker.data[i] != SOLID_CELL)
         marker.data[i] = 0;
     }
+    phis.clear();
+    markers.clear();
     phi.clear();
+    ids.clear();
     pressure.clear();
     r.clear();
     fl_index.clear();
@@ -90,7 +111,7 @@ public:
   float CFL();
   void add_gravity(float dt);
   void compute_phi();
-  void sweep_phi();
+  void sweep_phi(int id);
   void solve_phi(float p, float q, float r, float &c);
   void extend_velocity();
   void sweep_velocity();

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <eigen3/Eigen/IterativeLinearSolvers>
 #include <eigen3/Eigen/SparseCholesky>
+#include <glm/gtx/component_wise.hpp>
 #include <iostream>
 
 static inline int ijk_to_index(int i, int j, int k, Array3f &arr) {
@@ -256,7 +257,7 @@ void Grid::solve_x_helper(std::vector<Eigen::Triplet<double>> &tl, double &aii,
   if (marker(i1, j1, k1) != SOLID_CELL) {
     aii += 1;
     if (marker(i1, j1, k1) == FLUID_CELL) {
-      double scale = dt / (density * h * h);
+      double scale = dt / (densities[0] * h * h);
       tl.push_back(Eigen::Triplet<double>(fl_index(i, j, k),
                                           fl_index(i1, j1, k1), -scale));
     }
@@ -288,7 +289,7 @@ void Grid::solve_x(float dt) {
         if (marker(i, j, k) == FLUID_CELL) {
           int index = fl_index(i, j, k);
           double aii = 0; // negative sum of nonsolid nbrs
-          double scale = dt / (density * h * h);
+          double scale = dt / (densities[0] * h * h);
           solve_x_helper(tripletList, aii, dt, i, j, k, i + 1, j, k);
           solve_x_helper(tripletList, aii, dt, i, j, k, i - 1, j, k);
           solve_x_helper(tripletList, aii, dt, i, j, k, i, j + 1, k);
@@ -353,7 +354,7 @@ void Grid::add_pressure_gradient(float dt) {
               marker(i, j, k) == SOLID_CELL) {
             continue;
           } else {
-            double scale = -dt / (density * h);
+            double scale = -dt / (densities[0] * h);
             u(i, j, k) += scale * (pressure(i, j, k) - pressure(i - 1, j, k));
           }
         }
@@ -371,7 +372,7 @@ void Grid::add_pressure_gradient(float dt) {
               marker(i, j, k) == SOLID_CELL) {
             continue;
           } else {
-            double scale = -dt / (density * h);
+            double scale = -dt / (densities[0] * h);
             v(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j - 1, k));
           }
         }
@@ -389,7 +390,7 @@ void Grid::add_pressure_gradient(float dt) {
               marker(i, j, k) == SOLID_CELL) {
             continue;
           } else {
-            double scale = -dt / (density * h);
+            double scale = -dt / (densities[0] * h);
             w(i, j, k) += scale * (pressure(i, j, k) - pressure(i, j, k - 1));
           }
         }
@@ -400,26 +401,46 @@ void Grid::add_pressure_gradient(float dt) {
 
 void Grid::compute_phi() {
   // init
-  float big = phi.sx + phi.sy + phi.sz + 3;
-  for (int i = 0; i < phi.size; i++) {
-    phi.data[i] = big;
-  }
-  for (int i = 1; i < phi.sx - 1; i++) {
-    for (int j = 1; j < phi.sy - 1; j++) {
-      for (int k = 1; k < phi.sz - 1; k++) {
-        if (marker(i, j, k) == FLUID_CELL)
-          phi(i, j, k) = -0.5;
+  for (int id = 0; id < fluid_count; id++) {
+    float big = phis.sx + phis.sy + phis.sz + 3;
+    for (int i = 0; i < phis.size; i++) {
+      phis.data[i][id] = big;
+    }
+    for (int i = 1; i < phis.sx - 1; i++) {
+      for (int j = 1; j < phis.sy - 1; j++) {
+        for (int k = 1; k < phis.sz - 1; k++) {
+          if (markers(i, j, k)[id] == FLUID_CELL)
+            phis(i, j, k)[id] = -0.5;
+        }
       }
+    }
+
+    for (int i = 0; i < 2; i++) {
+      sweep_phi(id);
     }
   }
 
-  for (int i = 0; i < 2; i++) {
-    sweep_phi();
+  // now compute the minima of each phi
+  for (int i = 0; i < phi.size; i++) {
+    float compmin = 1e6;
+    int grid_id = -1;
+    for (int id = 0; id < fluid_count; id++) {
+      if (phis.data[i][id] < compmin) {
+        compmin = phis.data[i][id];
+        grid_id = id;
+      }
+    }
+    // set the id of a grid node to the
+    // fluid with the least phi (most inside)
+    ids.data[i] = grid_id;
+    // set the minimum phi value (for later use)
+    // for velocity extrapolation
+    phi.data[i] = compmin;
   }
 }
 
 // TODO abstract each direction into a function, as in sweeping velocity
-void Grid::sweep_phi() {
+void Grid::sweep_phi(int id) {
   // sweep in 8 directions
   for (int x = 0; x <= 1; x++) {
     for (int y = 0; y <= 1; y++) {
@@ -437,9 +458,9 @@ void Grid::sweep_phi() {
         for (int i = li; i != ui; i += si) {
           for (int j = lj; j != uj; j += sj) {
             for (int k = lk; k != uk; k += sk) {
-              if (marker(i, j, k) != FLUID_CELL)
-                solve_phi(phi(i - si, j, k), phi(i, j - sj, k),
-                          phi(i, j, k - sk), phi(i, j, k));
+              if (markers(i, j, k)[id] != FLUID_CELL)
+                solve_phi(phis(i - si, j, k)[id], phis(i, j - sj, k)[id],
+                          phis(i, j, k - sk)[id], phis(i, j, k)[id]);
             }
           }
         }

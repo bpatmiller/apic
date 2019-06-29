@@ -82,11 +82,25 @@ void Simulation::emit_particles() {
 }
 
 void Simulation::add_dam_break() {
+  float dens = 8.0f;
+  float visc = 1.0f;
+  int id = grid.add_fluid(dens, visc);
   for (int x = grid.nx * 0.75; x < grid.nx * 0.95; x++) {
     for (int y = grid.ny * 0.1; y < grid.ny * 0.6; y++) {
       for (int z = grid.nz * 0.1; z < grid.nz * 0.9; z++) {
         // for each cell, add 8 new jittered particles
-        reseed_cell(x, y, z);
+        reseed_cell(x, y, z, id, 1.0f, visc);
+      }
+    }
+  }
+  dens = 4.0f;
+  visc = 0.5f;
+  id = grid.add_fluid(dens, visc);
+  for (int x = grid.nx * 0.05; x < grid.nx * 0.25; x++) {
+    for (int y = grid.ny * 0.1; y < grid.ny * 0.6; y++) {
+      for (int z = grid.nz * 0.1; z < grid.nz * 0.9; z++) {
+        // for each cell, add 8 new jittered particles
+        reseed_cell(x, y, z, id, 1.0f, visc);
       }
     }
   }

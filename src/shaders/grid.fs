@@ -17,19 +17,19 @@ void main() {
   //   fragment_color = vec4(0.1);
   //}
   // divergence
-  if (p == 0) {
-    //    fragment_color = vec4(0.8,0.8,0.8,0.05);
-    fragment_color = vec4(0);
-  } else {
-    fragment_color = vec4(sin(p), 0.2, 0.2, 0.9);
-  }
+  // if (p == 0) {
+  //   //    fragment_color = vec4(0.8,0.8,0.8,0.05);
+  //   fragment_color = vec4(0);
+  // } else {
+  //   fragment_color = vec4(sin(p), 0.2, 0.2, 0.9);
+  // }
 
   // // type
-  // if (p == 0) {
-  //   fragment_color = vec4(0.1, 0.8, 0.1, 0.4);
-  // } else if (p == 1) {
-  //   fragment_color = vec4(0.2, 0.6, 0.6, 0.6);
-  // } else {
-  //   fragment_color = vec4(0.7, 0.1, 0.4, 0.5);
-  // }
+  if (p == 0) {
+    fragment_color = vec4(0.1, 0.8, 0.1, 0.4);
+  } else if (p == 1) {
+    fragment_color = vec4(0.2, 0.6, 0.6, 0.6);
+  } else {
+    fragment_color = vec4(0.7, 0.1, 0.4, 0.5);
+  }
 }
