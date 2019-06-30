@@ -481,3 +481,42 @@ void Grid::compute_divergence() {
     }
   }
 }
+
+void Grid::compute_volume_fractions(Array3f &level, Array3f &arr,
+                                    glm::vec3 offset, int substeps) {
+  float sub_h = 1.0f / (float)substeps;
+  int max_samples = substeps * substeps * substeps;
+
+  for (int i = 0; i < arr.sx; i++) {
+    for (int j = 0; j < arr.sy; j++) {
+      for (int k = 0; k < arr.sz; k++) {
+        int in_count = 0;
+        glm::ivec3 index(i, j, k);
+        for (int sub_i = 0; sub_i < substeps; sub_i++) {
+          for (int sub_j = 0; sub_j < substeps; sub_j++) {
+            for (int sub_k = 0; sub_k < substeps; sub_k++) {
+              glm::vec3 coords(sub_i * sub_h, sub_j * sub_h, sub_k * sub_h);
+              float phi_val = level.trilerp(index, coords);
+              if (phi_val < 0)
+                in_count++;
+            }
+          }
+        }
+        arr(i, j, k) = (float)in_count / (float)max_samples;
+      }
+    }
+  }
+}
+
+void Grid::apply_viscosity(float dt) {
+  compute_viscosity_weights(dt);
+  solve_viscosity(dt);
+}
+void Grid::compute_viscosity_weights(float dt) {
+  compute_volume_fractions(phi, c_vol, CENTER_OFFSET, 2);
+  compute_volume_fractions(phi, n_vol, glm::vec3(0, 0, 0), 2);
+  compute_volume_fractions(phi, u_vol, U_OFFSET, 2);
+  compute_volume_fractions(phi, v_vol, V_OFFSET, 2);
+  compute_volume_fractions(phi, w_vol, W_OFFSET, 2);
+}
+void Grid::solve_viscosity(float dt) {}

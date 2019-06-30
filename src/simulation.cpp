@@ -399,6 +399,7 @@ void Simulation::advance(float dt) {
   mark_cells();
   grid.compute_phi();
   grid.enforce_boundary();
+  grid.apply_viscosity(dt);
   grid.project(dt);
   grid.extend_velocity();
   grid_to_particles();
